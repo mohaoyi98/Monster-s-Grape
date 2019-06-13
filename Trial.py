@@ -53,6 +53,8 @@ def YahooFinanceImport(x,y):
     return dist
 
 def YFI():
+    # Get data from Yahoo Finance
+    # Turn into Stockstats dataframe, did some initial cleaning
     dist = {}
     for i in symbols:
         hist = SS.StockDataFrame.retype(yf.download(i, start = "2010-01-01", end = "2010-01-05", auto_adjust = False))
