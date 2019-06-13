@@ -6,4 +6,4 @@ Output from import data: dictionary, ['Adj Close', 'Close', 'High', 'Low', 'Open
 
 example: 
 dist["MSFT"] = [ [1,2,3], [2,3,4], [4,5,6],[5,6,7],[100,200,300]  ]
-dist.key = ["MSFT'...]吧
+dist.keys() = ["MSFT", "ABT", ...]
