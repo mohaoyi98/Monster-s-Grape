@@ -17,7 +17,7 @@ dist.keys() = ["MSFT", "ABT", ...]
 //try it on your computer ;)
 
 
-## Function specifics:
+### Function specifics:
 
 1. functions for each technicals
 input:all info of one company in 30 days; input type: one element of dictionary 
@@ -28,6 +28,6 @@ input:  type:
 output:  type: dataframe
 
 
-## Technicals assignments:
+### Technicals assignments:
 
 Mohao Yi: MACD, DMI, KDJ
