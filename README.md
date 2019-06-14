@@ -3,13 +3,12 @@ packages: numpy, sklearn, yfinance, pandas
 https://pythondata.com/stockstats-python-module-various-stock-market-statistics-indicators/
 
 Output from import data: 
-* A dictionary containing public pricing data of 399 stocks chosen from the top 500 companies.
-
-Type: Dictionary
-Key: Abbreviated stock name
-Value: Stockstats dataframe
-Stockstats Dataframe columns: ['Adj Close', 'Close', 'High', 'Low', 'Open', 'Volume']
-Stockstats Dataframe rows: Date, from 2010-01-04 to 2014-12-31
+* A dictionary containing public pricing data of 399 stocks chosen from the top 500 companies._
+Type: Dictionary_
+Key: Abbreviated stock name_
+Value: Stockstats dataframe_
+Stockstats Dataframe columns: ['Adj Close', 'Close', 'High', 'Low', 'Open', 'Volume']_
+Stockstats Dataframe rows: Date, from 2010-01-04 to 2014-12-31_
 
 
 example: 
