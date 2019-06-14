@@ -59,12 +59,6 @@ def YFI():
     for i in symbols:
         hist = SS.StockDataFrame.retype(yf.download(i, start = "2010-01-01", end = "2010-01-05", auto_adjust = False))
         dist[i] = hist.copy()
-        na = []
-        for k in dist:
-            if(dist[k].empty):
-                na = na+[k]
-        for i in na:
-            del dist[i]
     return dist
 
 def TechnicalFunctions(dist):
