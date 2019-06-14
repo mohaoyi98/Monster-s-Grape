@@ -4,6 +4,7 @@ https://pythondata.com/stockstats-python-module-various-stock-market-statistics-
 
 Output from import data: 
 * A dictionary containing public pricing data of 399 stocks chosen from the top 500 companies.
+
 Type: Dictionary
 Key: Abbreviated stock name
 Value: Stockstats dataframe
