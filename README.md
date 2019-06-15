@@ -19,7 +19,6 @@ dist.keys() = ["MSFT", "ABT", ...]
 
 
 Notes on the function $partition$: 
-
 1. If $cri$ is "weekly", then it returns a list of weekly stock data; otherwise, it returns a dictionary.
 
 2. Example of outputs (suppose variable $data$ stores the stock data imported by $YFI$):
@@ -35,6 +34,7 @@ Notes on the function $partition$:
     ...
     "2010-4": $stock data for the 4th quarter in 2010$} # the keys are in the form of year-quarter
 
+3. 0 warning(s), 0 error(s). Old brother, stable.
 
 ### Function specifics:
 
