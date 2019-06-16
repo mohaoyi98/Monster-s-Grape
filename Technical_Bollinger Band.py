@@ -30,7 +30,7 @@ def bollinger_strat(df,window,std,dateindex):
         if (df['Close'].iloc[row] < df['Bollinger Low'].iloc[row]) and (df['Close'].iloc[row-1] > df['Bollinger Low'].iloc[row-1]):
             df['Position'].iloc[row] = 1
 
-    #Forward fill our position column to replace the NA with the correct long/short positions to represent the "holding" of our position
+    #Forward fill our position column to replace the None with the correct long/short positions to represent the "holding" of our position
     #forward through time
     df['Position'].fillna(method='ffill',inplace=True)
 
@@ -38,7 +38,7 @@ def bollinger_strat(df,window,std,dateindex):
     df['Market Return'] = np.log(df['Close'] / df['Close'].shift(1))
     df['Strategy Return'] = df['Market Return'] * df['Position']
 
-    #plot the strategy retrun by the following instructions
+    #plot the strategy retrun by the following instruction
     #df['Strategy Return'].cumsum().plot()
 
     return df['Strategy Return'][dateindex-1]
