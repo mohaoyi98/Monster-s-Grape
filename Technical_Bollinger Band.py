@@ -48,7 +48,7 @@ def main():
     strategy_return={}
     for k in dist:
         df = pd.DataFrame(dist[k], columns = ['Adj Close', 'Close', 'High', 'Low', 'Open', 'Volume'])
-        #using the bollinger band strategy function (consider 30 days)
+        #using the bollinger band strategy function (consider 30 days) and giving the strategy return on the 90th day 
         srategy_return[k]=bollinger_strat(df,30,2,90)
 
     return strategy_return
