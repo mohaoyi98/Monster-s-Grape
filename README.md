@@ -50,4 +50,6 @@ output:  type: dataframe
 ### Technicals assignments:
 
 Mohao Yi: MACD, DMI, KDJ
+
+
 Jie Yu: Bollinger Band
