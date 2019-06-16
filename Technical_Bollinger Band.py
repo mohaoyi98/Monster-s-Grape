@@ -1,4 +1,4 @@
-#based on the program in "https://www.pythonforfinance.net/2017/07/31/bollinger-band-trading-strategy-backtest-in-python/"
+#modified from the program in "https://www.pythonforfinance.net/2017/07/31/bollinger-band-trading-strategy-backtest-in-python/"
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
