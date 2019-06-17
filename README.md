@@ -18,6 +18,16 @@ dist.keys() = ["MSFT", "ABT", ...]
 //try it on your computer ;)
 
 
+### Function specifics:
+
+1. functions for each technicals
+input:all info of one company in 30 days; input type: one element of dictionary 
+output:index e.g. rsi, mfi; output type: one element of dictionary
+
+2. helper functions (apply technicles into dataset)
+input:  type:
+output:  type: dataframe
+
 Notes on the function $partition$: 
 1. If $cri$ is "weekly", then it returns a list of weekly stock data; otherwise, it returns a dictionary.
 
@@ -33,18 +43,7 @@ Notes on the function $partition$:
 >> {"2010-1": $stock data for the 1st quarter in 2010$, 
     ...
     "2010-4": $stock data for the 4th quarter in 2010$} # the keys are in the form of year-quarter
-
-
-### Function specifics:
-
-1. functions for each technicals
-input:all info of one company in 30 days; input type: one element of dictionary 
-output:index e.g. rsi, mfi; output type: one element of dictionary
-
-2. helper functions (apply technicles into dataset)
-input:  type:
-output:  type: dataframe
-
+    
 
 ### Technicals assignments:
 
