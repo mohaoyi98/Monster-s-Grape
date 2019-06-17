@@ -1,5 +1,6 @@
 # Monster's Grape
-### Packages: numpy, sklearn, yfinance, pandas
+### Packages: 
+numpy, sklearn, yfinance, pandas
 https://pythondata.com/stockstats-python-module-various-stock-market-statistics-indicators/
 
 ### Output from import data: 
