@@ -53,3 +53,6 @@ Mohao Yi: MACD, DMI, KDJ
 
 
 Jie Yu: Bollinger Band
+
+
+Qiyu Ye: MFI(RSI)
