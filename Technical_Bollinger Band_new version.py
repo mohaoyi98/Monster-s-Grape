@@ -4,6 +4,19 @@ import numpy as np
 
 #define strategy in bollinger band
 def bollinger_strat(df,window,std,dateindex):
+    """
+    A Bollinger Band is defined by a set of lines plotted two standard deviations (positively and negatively)
+    away from a simple moving average (SMA) of the security's price, but can be adjusted to user preferences 
+    (here only using SMA).
+    When the actual stock price is higher than the uppper bound, it's a signal to buy; when the actual stock 
+    price is lower than the lower bound, it's a signal to sell.
+    https://www.investopedia.com/terms/b/bollingerbands.asp
+    Args:
+        'close': the close price on the day
+        'Bollinger High': the higher bound of Bollinger band
+        'Bollinger Low': the lower bound of Bollinger band
+        'Position': the operation needed on the day (1 if buying; -1 if selling)
+    """
     #calculate the mean and standard deviation
     rolling_mean = df['close'].rolling(window).mean()
     rolling_std = df['close'].rolling(window).std()
