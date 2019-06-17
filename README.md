@@ -56,3 +56,5 @@ Jie Yu: Bollinger Band
 
 
 Chi Yu Yeh: MFI(RSI)
+
+Haikuo Lu: Williams %R
