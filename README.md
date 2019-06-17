@@ -29,9 +29,9 @@ output:index e.g. rsi, mfi; output type: one element of dictionary
 input:  type:
 output:  type: dataframe
 
-3. Notes on the function $partition$: 
-   a. If $cri$ is "weekly", then it returns a list of weekly stock data; otherwise, it returns a dictionary.
-   b. Example of outputs (suppose variable $data$ stores the stock data imported by $YFI$):
+3. Notes on the function $partition$: <br />
+   a. If $cri$ is "weekly", then it returns a list of weekly stock data; otherwise, it returns a dictionary.<br />
+   b. Example of outputs (suppose variable $data$ stores the stock data imported by $YFI$):<br />
       >> partition(data["ABT"], 'monthly')
       >> {"2010-1": $stock data for 2010-1$, 
           "2010-2": $stock data for 2010-2$, 
