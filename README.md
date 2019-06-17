@@ -34,7 +34,6 @@ Notes on the function $partition$:
     ...
     "2010-4": $stock data for the 4th quarter in 2010$} # the keys are in the form of year-quarter
 
-3. 0 warning(s), 0 error(s). Old brother, stable.
 
 ### Function specifics:
 
