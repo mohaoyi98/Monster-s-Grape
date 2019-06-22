@@ -47,10 +47,10 @@ output:  type: dataframe
 
 ### Technicals assignments:
 
-Mohao Yi: MACD, DMI, KDJ
+Mohao Yi: DMI, KDJ
 
 
-Jie Yu: Bollinger Band
+Jie Yu: Bollinger Band, MACD
 
 
 Chi Yu Yeh: MFI(RSI)
