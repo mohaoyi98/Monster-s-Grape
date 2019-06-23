@@ -15,7 +15,7 @@ def bollinger_strat(df,window,std):
         'close': the close price on the day
         'Bollinger High': the higher bound of Bollinger band
         'Bollinger Low': the lower bound of Bollinger band
-        'Position': the operation needed on the day (1 if buying; -1 if selling)
+        'output': the voltage
     """
     #calculate the mean and standard deviation
     rolling_mean = df['close'].rolling(window).mean()
@@ -25,34 +25,23 @@ def bollinger_strat(df,window,std):
     df['Bollinger High'] = rolling_mean + (rolling_std * std)
     df['Bollinger Low'] = rolling_mean - (rolling_std * std)
 
-    #create new columns for specific operation: buy or sell
-    df['Position'] = None
-
-    #buy(1) if the close price is higher than the upper band; sell(-1) if the close price is lower than the lower band
+    #create new columns for output
+    df['output'] = None
+    
     for row in range(len(df)):
+        df['output'].iloc[row] = int(100*((df['close'].iloc[row] - df['Bollinger High'].iloc[row])/df['Bollinger High'].iloc[row]))
 
-        if (df['close'].iloc[row] > df['Bollinger High'].iloc[row]) and (df['close'].iloc[row-1] < df['Bollinger High'].iloc[row-1]):
-            df['Position'].iloc[row] = -1
-
-        if (df['close'].iloc[row] < df['Bollinger Low'].iloc[row]) and (df['close'].iloc[row-1] > df['Bollinger Low'].iloc[row-1]):
-            df['Position'].iloc[row] = 1
-
-    #Forward fill our position column to replace the None with the correct long/short positions to represent the "holding" of our position
-    df['Position'].fillna(method='ffill',inplace=True)
-
-    return df['Position']
+    return df['output']
 
 
 
 
-#take the date (i-th day, i is the input of this function) as input, return what operation is needed on this day.
-#return 1 if buying; return -1 if selling
 def main():
-    #generate strategy return for each company
+    #generate voltage return for each company
     strategy_return={}
     for k in dist:
         df = pd.DataFrame(dist[k])
-        #using the bollinger band strategy function (consider 30 days)
+        #return the valtage value (consider 30 days)
         srategy_return[k]=bollinger_strat(df,30,2)
 
     return strategy_return
