@@ -36,14 +36,12 @@ def bollinger_strat(df,window,std):
 
 
 
-#take the date (i-th day, i is the input of this function) as input, return what operation is needed on this day.
-#return 1 if buying; return -1 if selling
 def main():
-    #generate strategy return for each company
+    #generate voltage return for each company
     strategy_return={}
     for k in dist:
         df = pd.DataFrame(dist[k])
-        #using the bollinger band strategy function (consider 30 days)
+        #return the valtage value (consider 30 days)
         srategy_return[k]=bollinger_strat(df,30,2)
 
     return strategy_return
