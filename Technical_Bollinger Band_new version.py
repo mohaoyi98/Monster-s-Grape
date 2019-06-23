@@ -29,7 +29,7 @@ def bollinger_strat(df,window,std):
     df['output'] = None
     
     for row in range(len(df)):
-        df['output'].iloc[row] = (df['close'].iloc[row] - df['Bollinger High'].iloc[row])/df['Bollinger High'].iloc[row]
+        df['output'].iloc[row] = 100*((df['close'].iloc[row] - df['Bollinger High'].iloc[row])/df['Bollinger High'].iloc[row])
 
     return df['output']
 
