@@ -106,7 +106,7 @@ def YFI():
     for i in Na:
         del dist[i]
 
-    return TechnicalFunctions(dist)
+    return dist
 
 def TechnicalFunctions(dist):
     # Put Technical functions here
@@ -152,7 +152,7 @@ def partition(ssdf, cri):
     # criterion $cri$ (weekly, monthly, or quarterly)
 
     if cri == "weekly":
-        partitioned_data = []
+        partitioned_data = {}
 
         dates = list(ssdf.index)
         prev_dates = []
@@ -174,6 +174,8 @@ def partition(ssdf, cri):
             # if we are in a new week, store the data of the recent week,
             # and update the loop
             if weekday_delta >= 7:
+                cur_week_key = "week of " + recent_Monday.strftime("%Y-%m-%d %H:%M:%S")
+
                 cur_dates = future_dates[:i]
                 future_dates = future_dates[i:]
 
@@ -181,7 +183,7 @@ def partition(ssdf, cri):
                 prev_dates = prev_dates + cur_dates
 
                 cur_week_data = ssdf.drop(dates_to_be_dropped)
-                partitioned_data += [cur_week_data]
+                partitioned_data[cur_week_key] = cur_week_data
 
                 i = 0
 
