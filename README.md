@@ -30,8 +30,8 @@ input:  type:
 output:  type: dataframe
 
 3. Notes on the function $partition$: <br />
-   a. If $cri$ is "weekly", then it returns a list of weekly stock data; otherwise, it returns a dictionary.<br />
-   b. Example of outputs (suppose variable $data$ stores the stock data imported by $YFI$):<br />
+   a. If $cri$ is "weekly", then it will return a list of weekly stock data; otherwise, it returns a dictionary.
+   b. Example of outputs (suppose variable $data$ stores the stock data imported by $YFI$):
       >> partition(data["ABT"], 'monthly')
       >> {"2010-1": $stock data for 2010-1$, 
           "2010-2": $stock data for 2010-2$, 
@@ -43,6 +43,12 @@ output:  type: dataframe
       >> {"2010-1": $stock data for the 1st quarter in 2010$, 
           ...
           "2010-4": $stock data for the 4th quarter in 2010$} # the keys are in the form of year-quarter
+   
+   -- update: Now, if $cri$ is "weekly", it will also return a dictionary.
+      Example of outputs:
+      >> partition(data["ABT"], 'weekly')
+      >> {"week of 2010-1-4": $stock data for this week$, ...} # the date in each key is the date of Monday in that week
+   
     
 
 ### Technicals assignments:
