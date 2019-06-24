@@ -53,7 +53,7 @@ output:  type: dataframe
 
 ### Technicals assignments:
 
-Mohao Yi: DMI, KDJ
+Mohao Yi: OBV, ..., DMI, KDJ
 
 
 Jie Yu: Bollinger Band, MACD
