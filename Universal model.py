@@ -179,8 +179,8 @@ def train(X_train, X_test, Y_train, Y_test):
     model.compile(optimizer='adam', 
                   loss='sparse_categorical_crossentropy',
                   metrics=['accuracy'])
-    model.fit(X_train, Y_train, epochs=5, verbose = 0)
-    test_loss, test_acc = model.evaluate(X_test, Y_test, verbose = 0)
+    model.fit(X_train, Y_train, epochs=5, verbose = 1)
+    test_loss, test_acc = model.evaluate(X_test, Y_test, verbose = 1)
     
     # print('Correct Prediction (%): ', accuracy_score(Y_test, model.predict(X_test), normalize=True)*100.0)
     return model, test_acc
