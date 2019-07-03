@@ -23,7 +23,7 @@ import stockstats as SS
 from tensorflow.contrib import rnn
 from tensorflow.keras import datasets, layers, models
 import datetime as dt
-
+import random
 
 import alp1
 
@@ -129,35 +129,25 @@ def CreateFeatures(dist):
 def main():
     dist = YFI()
     # print(dist)
-    feas = CreateFeatures(dist)
+    #feas = CreateFeatures(dist)
+    X = GetAlphasAll(dist)
     symbol = dist.keys()
-    dfx_train = pd.DataFrame()
-    dfy_train = pd.DataFrame()
-    dfx_test = pd.DataFrame()
-    dfy_test = pd.DataFrame()
+    Y = np.asarray([])
     for i in symbol:
-        X = feas[i][:-1]
-
-        #print(X.shape[0])
         dfs = dist[i][:].copy()
-        Y = TrueYTransform(dfs['adj close'])[10:]
-        X, Y = check(X,Y)
-        
-        #print(Y.shape[0])
-            
-        length = len(Y)
-        split = int(length*0.75)
-        X_train, X_test = X[:split], X[split:]
-        Y_train, Y_test = Y[:split], Y[split:]
-        dfx_train = pd.concat([dfx_train, X_train], ignore_index=True)
-        dfy_train = np.append(dfy_train, Y_train)
-        dfx_test = pd.concat([dfx_test, X_test], ignore_index=True)
-        dfy_test = np.append(dfy_test, Y_test)
-    print(dfx_train.shape[0], dfy_train.shape[0])
+        temp = TrueYTransform(dfs['adj close'])
+        Y = np.append(Y, temp)
+    X, Y = check(X, Y)
+    print(len(X), len(Y))
+    length = len(Y)
+    split = int(length*0.75)
+    # choice = random.sample(range(length), split)
+    X_train, X_test = X[:split], X[split:]
+    Y_train, Y_test = Y[:split], Y[split:]
     #print(len(X_train), len(Y_train), len(X_test), len(Y_test))
     #X_train, Y_train = check(X_train, Y_train)
     #X_test, Y_test = check(X_test, Y_test)
-    modeli, iacc = train(dfx_train, dfx_test, dfy_train, dfy_test)
+    modeli, iacc = train(X_train, X_test, Y_train, Y_test)
     print(iacc)
     return modeli
 
@@ -172,10 +162,18 @@ def check(X, Y):
 
 def train(X_train, X_test, Y_train, Y_test):
     model = models.Sequential()
-    model.add(layers.Flatten(input_shape = [10]))
-    model.add(layers.Dense(128, activation = tf.nn.relu))
-    model.add(layers.Dense(64, activation = tf.nn.relu))
-    model.add(layers.Dense(32, activation = tf.nn.relu))
+    model.add(layers.Flatten(input_shape = [82]))
+    model.add(layers.Dense(28000, activation = tf.nn.relu))
+    #model.add(layers.Dense(20000, activation = tf.nn.relu))
+    model.add(layers.Dense(16000, activation = tf.nn.relu))
+    #model.add(layers.Dense(12000, activation = tf.nn.relu))
+    model.add(layers.Dense(8000, activation = tf.nn.relu))
+    #model.add(layers.Dense(6000, activation = tf.nn.relu))
+    model.add(layers.Dense(4000, activation = tf.nn.relu))
+    #model.add(layers.Dense(2000, activation = tf.nn.relu))
+    model.add(layers.Dense(1000, activation = tf.nn.relu))
+    #model.add(layers.Dense(500, activation = tf.nn.relu))
+    model.add(layers.Dense(256, activation = tf.nn.relu))
     model.add(layers.Dense(16, activation=tf.nn.softmax))
     # model.summary()
     model.compile(optimizer='adam', 
@@ -215,7 +213,7 @@ def GetAlphasAll(dist):
     df = pd.DataFrame()
     for i in dist:
         df = pd.concat([df, GetAlphas(dist[i].copy())], ignore_index=True)
-    return alp1.get_alpha(df)
+    return alp1.get_alpha(df).dropna().drop(['adj close', 'close', 'high', 'low', 'open', 'volume', 'amount', 'pctr'], axis=1)
 
 def GetAlphas(df):
     new = df.copy()[:-1]
@@ -228,5 +226,4 @@ def GetAlphas(df):
     new['amount'] = amount
     return new
 
-a = YFI()
-print(GetAlphasAll(a))
+main()
