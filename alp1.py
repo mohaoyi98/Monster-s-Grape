@@ -283,49 +283,50 @@ class Alphas(object):
         self.returns = df_data['pctr'] 
         self.vwap = (df_data['amount']*1000)/(df_data['volume']*100+1) 
         
-    # Alpha#1	 (rank(Ts_ArgMax(SignedPower(((returns < 0) ? stddev(returns, 20) : close), 2.), 5)) -0.5)
+    
     def alpha001(self):
+        '''Alpha#1	 (rank(Ts_ArgMax(SignedPower(((returns < 0) ? stddev(returns, 20) : close), 2.), 5)) -0.5)'''
         inner = self.close
         inner[self.returns < 0] = stddev(self.returns, 20)
         return rank(ts_argmax(inner ** 2, 5))
     
-    # Alpha#2	 (-1 * correlation(rank(delta(log(volume), 2)), rank(((close - open) / open)), 6))
     def alpha002(self):
+        '''Alpha#2	 (-1 * correlation(rank(delta(log(volume), 2)), rank(((close - open) / open)), 6))'''
         df = -1 * correlation(rank(delta(log(self.volume), 2)), rank((self.close - self.open) / self.open), 6)
         return df.replace([-np.inf, np.inf], 0).fillna(value=0)
     
-    # Alpha#3	 (-1 * correlation(rank(open), rank(volume), 10))
     def alpha003(self):
+        '''Alpha#3	 (-1 * correlation(rank(open), rank(volume), 10))'''
         df = -1 * correlation(rank(self.open), rank(self.volume), 10)
         return df.replace([-np.inf, np.inf], 0).fillna(value=0)
     
-    # Alpha#4	 (-1 * Ts_Rank(rank(low), 9))
     def alpha004(self):
+        '''Alpha#4	 (-1 * Ts_Rank(rank(low), 9))'''
         return -1 * ts_rank(rank(self.low), 9)
     
-    # Alpha#5	 (rank((open - (sum(vwap, 10) / 10))) * (-1 * abs(rank((close - vwap)))))
     def alpha005(self):
+        '''Alpha#5	 (rank((open - (sum(vwap, 10) / 10))) * (-1 * abs(rank((close - vwap)))))'''
         return  (rank((self.open - (sum(self.vwap, 10) / 10))) * (-1 * abs(rank((self.close - self.vwap)))))
     
-    # Alpha#6	 (-1 * correlation(open, volume, 10))
     def alpha006(self):
+        '''Alpha#6	 (-1 * correlation(open, volume, 10))'''
         df = -1 * correlation(self.open, self.volume, 10)
         return df.replace([-np.inf, np.inf], 0).fillna(value=0)
     
-    # Alpha#7	 ((adv20 < volume) ? ((-1 * ts_rank(abs(delta(close, 7)), 60)) * sign(delta(close, 7))) : (-1* 1))
     def alpha007(self):
+        '''Alpha#7	 ((adv20 < volume) ? ((-1 * ts_rank(abs(delta(close, 7)), 60)) * sign(delta(close, 7))) : (-1* 1))'''
         adv20 = sma(self.volume, 20)
         alpha = -1 * ts_rank(abs(delta(self.close, 7)), 60) * sign(delta(self.close, 7))
         alpha[adv20 >= self.volume] = -1
         return alpha
     
-    # Alpha#8	 (-1 * rank(((sum(open, 5) * sum(returns, 5)) - delay((sum(open, 5) * sum(returns, 5)),10))))
     def alpha008(self):
+        '''Alpha#8	 (-1 * rank(((sum(open, 5) * sum(returns, 5)) - delay((sum(open, 5) * sum(returns, 5)),10))))'''
         return -1 * (rank(((ts_sum(self.open, 5) * ts_sum(self.returns, 5)) -
                            delay((ts_sum(self.open, 5) * ts_sum(self.returns, 5)), 10))))
     
-    # Alpha#9	 ((0 < ts_min(delta(close, 1), 5)) ? delta(close, 1) : ((ts_max(delta(close, 1), 5) < 0) ?delta(close, 1) : (-1 * delta(close, 1))))
     def alpha009(self):
+        '''Alpha#9	 ((0 < ts_min(delta(close, 1), 5)) ? delta(close, 1) : ((ts_max(delta(close, 1), 5) < 0) ?delta(close, 1) : (-1 * delta(close, 1))))'''
         delta_close = delta(self.close, 1)
         cond_1 = ts_min(delta_close, 5) > 0
         cond_2 = ts_max(delta_close, 5) < 0
@@ -333,8 +334,8 @@ class Alphas(object):
         alpha[cond_1 | cond_2] = delta_close
         return alpha
     
-    # Alpha#10	 rank(((0 < ts_min(delta(close, 1), 4)) ? delta(close, 1) : ((ts_max(delta(close, 1), 4) < 0)? delta(close, 1) : (-1 * delta(close, 1)))))
     def alpha010(self):
+        '''Alpha#10	 rank(((0 < ts_min(delta(close, 1), 4)) ? delta(close, 1) : ((ts_max(delta(close, 1), 4) < 0)? delta(close, 1) : (-1 * delta(close, 1)))))'''
         delta_close = delta(self.close, 1)
         cond_1 = ts_min(delta_close, 4) > 0
         cond_2 = ts_max(delta_close, 4) < 0
@@ -342,61 +343,61 @@ class Alphas(object):
         alpha[cond_1 | cond_2] = delta_close
         return alpha
     
-    # Alpha#11	 ((rank(ts_max((vwap - close), 3)) + rank(ts_min((vwap - close), 3))) *rank(delta(volume, 3)))
     def alpha011(self):
+        '''Alpha#11	 ((rank(ts_max((vwap - close), 3)) + rank(ts_min((vwap - close), 3))) *rank(delta(volume, 3)))'''
         return ((rank(ts_max((self.vwap - self.close), 3)) + rank(ts_min((self.vwap - self.close), 3))) *rank(delta(self.volume, 3)))
     
-    # Alpha#12	 (sign(delta(volume, 1)) * (-1 * delta(close, 1)))
     def alpha012(self):
+        '''Alpha#12	 (sign(delta(volume, 1)) * (-1 * delta(close, 1)))'''
         return sign(delta(self.volume, 1)) * (-1 * delta(self.close, 1))
 
-    # Alpha#13	 (-1 * rank(covariance(rank(close), rank(volume), 5)))
     def alpha013(self):
+        '''Alpha#13	 (-1 * rank(covariance(rank(close), rank(volume), 5)))'''
         return -1 * rank(covariance(rank(self.close), rank(self.volume), 5))
     
-    # Alpha#14	 ((-1 * rank(delta(returns, 3))) * correlation(open, volume, 10))
     def alpha014(self):
+        '''Alpha#14	 ((-1 * rank(delta(returns, 3))) * correlation(open, volume, 10))'''
         df = correlation(self.open, self.volume, 10)
         df = df.replace([-np.inf, np.inf], 0).fillna(value=0)
         return -1 * rank(delta(self.returns, 3)) * df
     
-    # Alpha#15	 (-1 * sum(rank(correlation(rank(high), rank(volume), 3)), 3))
     def alpha015(self):
+        '''Alpha#15	 (-1 * sum(rank(correlation(rank(high), rank(volume), 3)), 3))'''
         df = correlation(rank(self.high), rank(self.volume), 3)
         df = df.replace([-np.inf, np.inf], 0).fillna(value=0)
         return -1 * ts_sum(rank(df), 3)
     
-    # Alpha#16	 (-1 * rank(covariance(rank(high), rank(volume), 5)))
     def alpha016(self):
+        '''Alpha#16	 (-1 * rank(covariance(rank(high), rank(volume), 5)))'''
         return -1 * rank(covariance(rank(self.high), rank(self.volume), 5))
     
-    # Alpha#17	 (((-1 * rank(ts_rank(close, 10))) * rank(delta(delta(close, 1), 1))) *rank(ts_rank((volume / adv20), 5)))
     def alpha017(self):
+        '''Alpha#17	 (((-1 * rank(ts_rank(close, 10))) * rank(delta(delta(close, 1), 1))) *rank(ts_rank((volume / adv20), 5)))'''
         adv20 = sma(self.volume, 20)
         return -1 * (rank(ts_rank(self.close, 10)) *
                      rank(delta(delta(self.close, 1), 1)) *
                      rank(ts_rank((self.volume / adv20), 5)))
         
-    # Alpha#18	 (-1 * rank(((stddev(abs((close - open)), 5) + (close - open)) + correlation(close, open,10))))
     def alpha018(self):
+        '''Alpha#18	 (-1 * rank(((stddev(abs((close - open)), 5) + (close - open)) + correlation(close, open,10))))'''
         df = correlation(self.close, self.open, 10)
         df = df.replace([-np.inf, np.inf], 0).fillna(value=0)
         return -1 * (rank((stddev(abs((self.close - self.open)), 5) + (self.close - self.open)) +
                           df))
     
-    # Alpha#19	 ((-1 * sign(((close - delay(close, 7)) + delta(close, 7)))) * (1 + rank((1 + sum(returns,250)))))
     def alpha019(self):
+        '''Alpha#19	 ((-1 * sign(((close - delay(close, 7)) + delta(close, 7)))) * (1 + rank((1 + sum(returns,250)))))'''
         return ((-1 * sign((self.close - delay(self.close, 7)) + delta(self.close, 7))) *
                 (1 + rank(1 + ts_sum(self.returns, 250))))
     
-    # Alpha#20	 (((-1 * rank((open - delay(high, 1)))) * rank((open - delay(close, 1)))) * rank((open -delay(low, 1))))
     def alpha020(self):
+        '''Alpha#20	 (((-1 * rank((open - delay(high, 1)))) * rank((open - delay(close, 1)))) * rank((open -delay(low, 1))))'''
         return -1 * (rank(self.open - delay(self.high, 1)) *
                      rank(self.open - delay(self.close, 1)) *
                      rank(self.open - delay(self.low, 1)))
 
-    # Alpha#21	 ((((sum(close, 8) / 8) + stddev(close, 8)) < (sum(close, 2) / 2)) ? (-1 * 1) : (((sum(close,2) / 2) < ((sum(close, 8) / 8) - stddev(close, 8))) ? 1 : (((1 < (volume / adv20)) || ((volume /adv20) == 1)) ? 1 : (-1 * 1))))
     def alpha021(self):
+        '''Alpha#21	 ((((sum(close, 8) / 8) + stddev(close, 8)) < (sum(close, 2) / 2)) ? (-1 * 1) : (((sum(close,2) / 2) < ((sum(close, 8) / 8) - stddev(close, 8))) ? 1 : (((1 < (volume / adv20)) || ((volume /adv20) == 1)) ? 1 : (-1 * 1))))'''
         cond_1 = sma(self.close, 8) + stddev(self.close, 8) < sma(self.close, 2)
         cond_2 = sma(self.volume, 20) / self.volume < 1
         alpha = pd.DataFrame(np.ones_like(self.close), index=self.close.index
@@ -406,66 +407,66 @@ class Alphas(object):
         alpha[cond_1 | cond_2] = -1
         return alpha
     
-    # Alpha#22	 (-1 * (delta(correlation(high, volume, 5), 5) * rank(stddev(close, 20))))
     def alpha022(self):
+        '''Alpha#22	 (-1 * (delta(correlation(high, volume, 5), 5) * rank(stddev(close, 20))))'''
         df = correlation(self.high, self.volume, 5)
         df = df.replace([-np.inf, np.inf], 0).fillna(value=0)
         return -1 * delta(df, 5) * rank(stddev(self.close, 20))
 
-    # Alpha#23	 (((sum(high, 20) / 20) < high) ? (-1 * delta(high, 2)) : 0)
     def alpha023(self):
+        '''Alpha#23	 (((sum(high, 20) / 20) < high) ? (-1 * delta(high, 2)) : 0)'''
         cond = sma(self.high, 20) < self.high
         alpha = pd.DataFrame(np.zeros_like(self.close),index=self.close.index,columns=['close'])
         alpha.at[cond,'close'] = -1 * delta(self.high, 2).fillna(value=0)
         return alpha
     
-    # Alpha#24	 ((((delta((sum(close, 100) / 100), 100) / delay(close, 100)) < 0.05) ||((delta((sum(close, 100) / 100), 100) / delay(close, 100)) == 0.05)) ? (-1 * (close - ts_min(close,100))) : (-1 * delta(close, 3)))
     def alpha024(self):
+        '''Alpha#24	 ((((delta((sum(close, 100) / 100), 100) / delay(close, 100)) < 0.05) ||((delta((sum(close, 100) / 100), 100) / delay(close, 100)) == 0.05)) ? (-1 * (close - ts_min(close,100))) : (-1 * delta(close, 3)))'''
         cond = delta(sma(self.close, 100), 100) / delay(self.close, 100) <= 0.05
         alpha = -1 * delta(self.close, 3)
         alpha[cond] = -1 * (self.close - ts_min(self.close, 100))
         return alpha
     
-    # Alpha#25	 rank(((((-1 * returns) * adv20) * vwap) * (high - close)))
     def alpha025(self):
+        '''Alpha#25	 rank(((((-1 * returns) * adv20) * vwap) * (high - close)))'''
         adv20 = sma(self.volume, 20)
         return rank(((((-1 * self.returns) * adv20) * self.vwap) * (self.high - self.close)))
     
-    # Alpha#26	 (-1 * ts_max(correlation(ts_rank(volume, 5), ts_rank(high, 5), 5), 3))
     def alpha026(self):
+        '''Alpha#26	 (-1 * ts_max(correlation(ts_rank(volume, 5), ts_rank(high, 5), 5), 3))'''
         df = correlation(ts_rank(self.volume, 5), ts_rank(self.high, 5), 5)
         df = df.replace([-np.inf, np.inf], 0).fillna(value=0)
         return -1 * ts_max(df, 3)
     
-    # Alpha#27	 ((0.5 < rank((sum(correlation(rank(volume), rank(vwap), 6), 2) / 2.0))) ? (-1 * 1) : 1)
     ###
     ## Some Error, still fixing!!
     def alpha027(self):
+        '''Alpha#27	 ((0.5 < rank((sum(correlation(rank(volume), rank(vwap), 6), 2) / 2.0))) ? (-1 * 1) : 1)'''
         alpha = rank((sma(correlation(rank(self.volume), rank(self.vwap), 6), 2) / 2.0))
         alpha[alpha > 0.5] = -1
         alpha[alpha <= 0.5]=1
         return alpha  
     
-    # Alpha#28	 scale(((correlation(adv20, low, 5) + ((high + low) / 2)) - close))
     def alpha028(self):
+        '''Alpha#28	 scale(((correlation(adv20, low, 5) + ((high + low) / 2)) - close))'''
         adv20 = sma(self.volume, 20)
         df = correlation(adv20, self.low, 5)
         df = df.replace([-np.inf, np.inf], 0).fillna(value=0)
         return scale(((df + ((self.high + self.low) / 2)) - self.close))
 
-    # Alpha#29	 (min(product(rank(rank(scale(log(sum(ts_min(rank(rank((-1 * rank(delta((close - 1),5))))), 2), 1))))), 1), 5) + ts_rank(delay((-1 * returns), 6), 5))
     def alpha029(self):
+        '''Alpha#29	 (min(product(rank(rank(scale(log(sum(ts_min(rank(rank((-1 * rank(delta((close - 1),5))))), 2), 1))))), 1), 5) + ts_rank(delay((-1 * returns), 6), 5))'''
         return (ts_min(rank(rank(scale(log(ts_sum(rank(rank(-1 * rank(delta((self.close - 1), 5)))), 2))))), 5) +
                 ts_rank(delay((-1 * self.returns), 6), 5))
 
-    # Alpha#30	 (((1.0 - rank(((sign((close - delay(close, 1))) + sign((delay(close, 1) - delay(close, 2)))) +sign((delay(close, 2) - delay(close, 3)))))) * sum(volume, 5)) / sum(volume, 20))
     def alpha030(self):
+        '''Alpha#30	 (((1.0 - rank(((sign((close - delay(close, 1))) + sign((delay(close, 1) - delay(close, 2)))) +sign((delay(close, 2) - delay(close, 3)))))) * sum(volume, 5)) / sum(volume, 20))'''
         delta_close = delta(self.close, 1)
         inner = sign(delta_close) + sign(delay(delta_close, 1)) + sign(delay(delta_close, 2))
         return ((1.0 - rank(inner)) * ts_sum(self.volume, 5)) / ts_sum(self.volume, 20)
 
-    # Alpha#31	 ((rank(rank(rank(decay_linear((-1 * rank(rank(delta(close, 10)))), 10)))) + rank((-1 *delta(close, 3)))) + sign(scale(correlation(adv20, low, 12))))
     def alpha031(self):
+        '''Alpha#31	 ((rank(rank(rank(decay_linear((-1 * rank(rank(delta(close, 10)))), 10)))) + rank((-1 *delta(close, 3)))) + sign(scale(correlation(adv20, low, 12))))'''
         adv20 = sma(self.volume, 20)
         df = correlation(adv20, self.low, 12).replace([-np.inf, np.inf], 0).fillna(value=0)         
         p1=rank(rank(rank(decay_linear((-1 * rank(rank(delta(self.close, 10)))).to_frame(), 10)))) 
@@ -474,28 +475,28 @@ class Alphas(object):
         
         return p1.CLOSE+p2+p3
 
-    # Alpha#32	 (scale(((sum(close, 7) / 7) - close)) + (20 * scale(correlation(vwap, delay(close, 5),230))))
     def alpha032(self):
+        '''Alpha#32	 (scale(((sum(close, 7) / 7) - close)) + (20 * scale(correlation(vwap, delay(close, 5),230))))'''
         return scale(((sma(self.close, 7) / 7) - self.close)) + (20 * scale(correlation(self.vwap, delay(self.close, 5),230)))
     
-    # Alpha#33	 rank((-1 * ((1 - (open / close))^1)))
     def alpha033(self):
+        '''Alpha#33	 rank((-1 * ((1 - (open / close))^1)))'''
         return rank(-1 + (self.open / self.close))
     
-    # Alpha#34	 rank(((1 - rank((stddev(returns, 2) / stddev(returns, 5)))) + (1 - rank(delta(close, 1)))))
     def alpha034(self):
+        '''Alpha#34	 rank(((1 - rank((stddev(returns, 2) / stddev(returns, 5)))) + (1 - rank(delta(close, 1)))))'''
         inner = stddev(self.returns, 2) / stddev(self.returns, 5)
         inner = inner.replace([-np.inf, np.inf], 1).fillna(value=1)
         return rank(2 - rank(inner) - rank(delta(self.close, 1)))
 
-    # Alpha#35	 ((Ts_Rank(volume, 32) * (1 - Ts_Rank(((close + high) - low), 16))) * (1 -Ts_Rank(returns, 32)))
     def alpha035(self):
+        '''Alpha#35	 ((Ts_Rank(volume, 32) * (1 - Ts_Rank(((close + high) - low), 16))) * (1 -Ts_Rank(returns, 32)))'''
         return ((ts_rank(self.volume, 32) *
                  (1 - ts_rank(self.close + self.high - self.low, 16))) *
                 (1 - ts_rank(self.returns, 32)))
             
-    # Alpha#36	 (((((2.21 * rank(correlation((close - open), delay(volume, 1), 15))) + (0.7 * rank((open- close)))) + (0.73 * rank(Ts_Rank(delay((-1 * returns), 6), 5)))) + rank(abs(correlation(vwap,adv20, 6)))) + (0.6 * rank((((sum(close, 200) / 200) - open) * (close - open)))))
     def alpha036(self):
+        '''Alpha#36	 (((((2.21 * rank(correlation((close - open), delay(volume, 1), 15))) + (0.7 * rank((open- close)))) + (0.73 * rank(Ts_Rank(delay((-1 * returns), 6), 5)))) + rank(abs(correlation(vwap,adv20, 6)))) + (0.6 * rank((((sum(close, 200) / 200) - open) * (close - open)))))'''
         adv20 = sma(self.volume, 20)
         return (((((2.21 * rank(correlation((self.close - self.open), delay(self.volume, 1), 15))) + (0.7 * rank((self.open- self.close)))) + (0.73 * rank(ts_rank(delay((-1 * self.returns), 6), 5)))) + rank(abs(correlation(self.vwap,adv20, 6)))) + (0.6 * rank((((sma(self.close, 200) / 200) - self.open) * (self.close - self.open)))))
     
