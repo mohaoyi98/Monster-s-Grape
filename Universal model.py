@@ -105,6 +105,7 @@ def YFI():
     return dist
 
 def CreateFeatures(dist):
+    '''return all kinds of index; we can use them as features'''
     sym = dist.keys()
     new = {}
     for i in sym:
@@ -231,4 +232,5 @@ def GetAlphas(df):
     new['amount'] = amount
     return new
 
+#execute main function
 main()
