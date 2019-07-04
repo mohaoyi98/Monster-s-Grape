@@ -25,7 +25,7 @@ from tensorflow.keras import datasets, layers, models
 import datetime as dt
 import random
 
-import alp1
+import alp1 # import alpha features in alp1.py
 
 symbols = pd.read_excel('SP500.xlsx')
 symbols = list(symbols['Symbol'])
@@ -41,7 +41,7 @@ def YFI():
     #today = str(dt.datetime.today())[:10]
     #startdate = str(dt.datetime.today()-dt.timedelta(days=360))[:10]
     
-
+    # get monthly data from yahoo finance 
     hist = yf.download(symbols, period = '10y', interval = '1mo', group_by = 'ticker', auto_adjust = False)
     for i in symbols:
         dist[i] = SS.StockDataFrame.retype(hist[i].copy())
@@ -135,23 +135,24 @@ def main():
     Y = np.asarray([])
     for i in symbol:
         dfs = dist[i][:].copy()
-        temp = TrueYTransform(dfs['adj close'])
-        Y = np.append(Y, temp)
-    X, Y = check(X, Y)
+        temp = TrueYTransform(dfs['adj close']) # rescale 'adj close' data 
+        Y = np.append(Y, temp) # add the rescaled data into Y
+    X, Y = check(X, Y) # adjust the length of Xand Y
     print(len(X), len(Y))
     length = len(Y)
-    split = int(length*0.75)
+    split = int(length*0.75) # 75% of the data for trianing; 25% of data for testing
     # choice = random.sample(range(length), split)
     X_train, X_test = X[:split], X[split:]
     Y_train, Y_test = Y[:split], Y[split:]
     #print(len(X_train), len(Y_train), len(X_test), len(Y_test))
     #X_train, Y_train = check(X_train, Y_train)
     #X_test, Y_test = check(X_test, Y_test)
-    modeli, iacc = train(X_train, X_test, Y_train, Y_test)
-    print(iacc)
-    return modeli
+    modeli, iacc = train(X_train, X_test, Y_train, Y_test) # fit a NN model and give a testing result
+    print(iacc)# print the testing output: "accuracy"
+    return modeli #return the traning result: "loss"
 
 def check(X, Y):
+    ''' to keep X and Y in the same length'''
     lx = len(X)
     ly = len(Y)
     if lx != ly:
@@ -186,6 +187,7 @@ def train(X_train, X_test, Y_train, Y_test):
     return model, test_acc
 
 def TrueYTransform(prices):
+    '''rescale price (Y) into 0/1'''
     temp=[]
     for i in range(len(prices)-1):
         percentageR = ((prices[i+1]-prices[i])/prices[i])
@@ -197,6 +199,8 @@ def TrueYTransform(prices):
     return np.asarray(temp)
 
 def PriceToEarningPerShare(prices):
+    '''Earnings per share: a portion of a company's profit that is allocated to one share of stock.
+       The definition comes from the website: "https://www.wikihow.com/Calculate-Earnings-Per-Share"'''
     temp=[]
     for i in range(len(prices)-1):
         percentageR = (prices[i+1]-prices[i])
@@ -212,16 +216,17 @@ def PriceToEarningPerShare(prices):
 def GetAlphasAll(dist):
     df = pd.DataFrame()
     for i in dist:
-        df = pd.concat([df, GetAlphas(dist[i].copy())], ignore_index=True)
-    return alp1.get_alpha(df).dropna().drop(['adj close', 'close', 'high', 'low', 'open', 'volume', 'amount', 'pctr'], axis=1)
+        df = pd.concat([df, GetAlphas(dist[i].copy())], ignore_index=True) # unite the percentage return, quantum and original data of all the companies into one big dataframe
+    return alp1.get_alpha(df).dropna().drop(['adj close', 'close', 'high', 'low', 'open', 'volume', 'amount', 'pctr'], axis=1) # only return the values of alphas of all the companies in alp1.py 
 
 def GetAlphas(df):
+    '''return the percentage return and quantum'''
     new = df.copy()[:-1]
     pctr = []
     amount = []
     for i in range(df.shape[0]-1):
-        pctr += [(df['close'][i+1]-df['close'][i])/df['close'][i]]
-        amount += [df['close'][i]*df['volume'][i]]
+        pctr += [(df['close'][i+1]-df['close'][i])/df['close'][i]] # percentage of return
+        amount += [df['close'][i]*df['volume'][i]] # quantum (amount) = price * volume
     new['pctr'] = pctr
     new['amount'] = amount
     return new
