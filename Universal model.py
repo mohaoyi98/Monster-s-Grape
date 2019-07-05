@@ -138,7 +138,7 @@ def main():
         dfs = dist[i][:].copy()
         temp = TrueYTransform(dfs['adj close']) # rescale 'adj close' data 
         Y = np.append(Y, temp) # add the rescaled data into Y
-    X, Y = check(X, Y) # adjust the length of Xand Y
+    X, Y = check(X, Y) # adjust the length of X and Y
     print(len(X), len(Y))
     length = len(Y)
     split = int(length*0.75) # 75% of the data for trianing; 25% of data for testing
