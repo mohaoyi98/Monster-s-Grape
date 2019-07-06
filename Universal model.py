@@ -152,6 +152,15 @@ def main():
     print(iacc)# print the testing output: "accuracy"
     return modeli #return the traning result: "loss"
 
+def random_simul(length):
+    y_simul = np.asarray(range(length))
+    classes = [0, 1]
+    
+    for i in range(length):
+        y_simul[i] = random.choice(classes)
+    
+    return y_simul
+
 def check(X, Y):
     ''' to keep X and Y in the same length'''
     lx = len(X)
