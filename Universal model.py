@@ -152,12 +152,37 @@ def main():
     print(iacc)# print the testing output: "accuracy"
     return modeli #return the traning result: "loss"
 
-def random_simul(length):
+def get_weighted_classes(weights, classes):
+    '''
+    input: weights -- a list of weights assigned to each class, 
+                      each weight should be an int
+           classes -- a list of classes
+    output: a list of weighted classes, where each class appears n times
+            (n is the weight assigned to that class)
+    '''
+    weighted_classes = []
+    
+    i = 0
+    while i < len(weights) and i < len(classes):
+        next_weight, next_class = weights[i], classes[i]
+        assert type(weights[i]) == int
+        
+        weighted_classes += weights[i] * [next_class]
+        
+        i += 1
+    
+    return weighted_classes
+    
+def random_simul(length, weighted_classes):
+    '''
+    input: length -- int, the # of data points in the dataset
+           weighted_classes -- a list of weighted classes
+    output: a np array with randomly simulated y values
+    '''
     y_simul = np.asarray(range(length))
-    classes = [0, 1]
     
     for i in range(length):
-        y_simul[i] = random.choice(classes)
+        y_simul[i] = random.choice(weighted_classes)
     
     return y_simul
 
