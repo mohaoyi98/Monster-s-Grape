@@ -35,6 +35,7 @@ symbols = list(symbols['Symbol'])
 # Available types from Yahoo Finance
 tem = ['Adj Close', 'Close', 'High', 'Low', 'Open', 'Volume']
 def YFI():
+    '''import stock data from yahoo finance'''
     # Get data from Yahoo Finance
     # Turn into Stockstats dataframe, did some initial cleaning
     dist = {}
@@ -150,7 +151,8 @@ def main():
     #X_test, Y_test = check(X_test, Y_test)
     modeli, iacc = train(X_train, X_test, Y_train, Y_test) # fit a NN model and give a testing result
     print(iacc)# print the testing output: "accuracy"
-    return modeli #return the traning result: "loss"
+    RMCompare(Y_test, iacc)
+    return modeli, iacc #return the trained model
 
 def get_weighted_classes(weights, classes):
     '''
@@ -197,6 +199,7 @@ def check(X, Y):
         return X, Y
 
 def train(X_train, X_test, Y_train, Y_test):
+    '''Train and test a regular neural network'''
     model = models.Sequential()
     model.add(layers.Flatten(input_shape = [82]))
     #model.add(layers.Dense(28000, activation = tf.nn.relu))
@@ -249,6 +252,7 @@ def PriceToEarningPerShare(prices):
     return np.asarray(temp)
 
 def GetAlphasAll(dist):
+    '''Return dataframe of companies with corresponding alpha values'''
     df = pd.DataFrame()
     for i in dist:
         df = pd.concat([df, GetAlphas(dist[i].copy())], ignore_index=True) # unite the percentage return, quantum and original data of all the companies into one big dataframe
@@ -266,5 +270,19 @@ def GetAlphas(df):
     new['amount'] = amount
     return new
 
-#execute main function
-main()
+def RMCompare(test, acc):
+    '''Generate comparison between machine and random machine'''
+    ran = random_simul(500,[0,1])
+    ran, test = check(ran, test)
+    temp = ran-test
+    ranAcc = 0
+    for i in temp:
+        if i == 0:
+            ranAcc += 1
+    ranAcc = ranAcc / len(ran)
+    model, iacc = main()
+    print('Model Accuracy:', iacc, 'Random Accuracy:', acc)
+    return
+#test area
+
+
