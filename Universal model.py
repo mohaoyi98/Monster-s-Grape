@@ -43,7 +43,7 @@ def YFI():
     #startdate = str(dt.datetime.today()-dt.timedelta(days=360))[:10]
     
     # get monthly data from yahoo finance 
-    hist = yf.download(symbols, period = '10y', interval = '1mo', group_by = 'ticker', auto_adjust = False)
+    hist = yf.download(symbols, period = '5y', interval = '1mo', group_by = 'ticker', auto_adjust = False)
     for i in symbols:
         dist[i] = SS.StockDataFrame.retype(hist[i].copy())
     # Data cleaning
@@ -55,43 +55,7 @@ def YFI():
     for i in na:
         del dist[i]
     # replace sporadic NAs with previous day's pricing data
-    """
-    naList = {}
-    for k in dist:
-        i = 0
-        while i<=5:
-            if (dist[k].isna().any()[i]):
-                if k in naList:
-                    naList[k].append(i)
-                else:
-                    naList[k] = [i]
-            i=i+1
-    SnaList = []
-    for k in naList:
-        j=0
-        while j<=5:
-            for i in range(len(dist[k].iloc[:,0])):
-                if dist[k].iloc[:,j].isna()[i]:
-                    SnaList = SnaList +[i]
-            j=j+1
-    j=0
-    for k in naList: 
-        i=0
-        while i <=5:
-            temp = dist[k].iloc[:,i][SnaList[j]-1]
-            dist[k].iloc[:,i][SnaList[j]] = temp
-            i=i+1
-            j=j+1
-    
-    Na = []
-    for k in dist:
-        t= pd.to_datetime(list(dist[k].index.values[[0]])[0]) 
-        tstr= t.strftime("%Y-%m-%d")
-        if tstr != '2010-01-04':
-            Na = Na+[k]
-    for i in Na:
-        del dist[i] 
-     """
+
     for i in dist.keys():
         dist[i].dropna()
         temp = dist[i].index.values
@@ -102,7 +66,20 @@ def YFI():
                 temp2 =temp2 + [temp[j]]
         dist[i] = dist[i].drop(temp2)
         
-    
+    for i in dist.keys():
+        for j in ['close', 'open', 'high', 'low']:
+            for k in range(dist[i][j].shape[0]-1):
+                a = dist[i][j][k]
+                b = dist[i][j][k+1]
+                if a==b:
+                    dist[i][j][k+1] = b+0.001
+    na = []
+    for k in dist:
+        if(dist[k].empty):
+            na = na+[k]
+    for i in na:
+        del dist[i] 
+
     return dist
 
 def CreateFeatures(dist):
@@ -133,26 +110,41 @@ def main():
     # print(dist)
     #feas = CreateFeatures(dist)
     X = GetAlphasAll(dist)
-    symbol = dist.keys()
-    Y = np.asarray([])
-    for i in symbol:
-        dfs = dist[i][:].copy()
-        temp = TrueYTransform(dfs['adj close']) # rescale 'adj close' data 
-        Y = np.append(Y, temp) # add the rescaled data into Y
-    X, Y = check(X, Y) # adjust the length of X and Y
-    print(len(X), len(Y))
-    length = len(Y)
-    split = int(length*0.75) # 75% of the data for trianing; 25% of data for testing
-    # choice = random.sample(range(length), split)
-    X_train, X_test = X[:split], X[split:]
-    Y_train, Y_test = Y[:split], Y[split:]
-    #print(len(X_train), len(Y_train), len(X_test), len(Y_test))
-    #X_train, Y_train = check(X_train, Y_train)
-    #X_test, Y_test = check(X_test, Y_test)
+ 
+    Y = TrueYTransform(dist)
+
+
+    X_train, X_test = splitterX(X)
+    Y_train, Y_test = splitterY(Y)
+    X_train, Y_train = check(X_train, Y_train)
+    X_test, Y_test = check(X_test, Y_test)
+    print(len(X_train), len(Y_train), len(X_test), len(Y_test))
     modeli, iacc = train(X_train, X_test, Y_train, Y_test) # fit a NN model and give a testing result
     print(iacc)# print the testing output: "accuracy"
-    RMCompare(Y_test, iacc)
+    print(RMCompare(Y_test))
     return modeli, iacc #return the trained model
+
+def splitterX(dist):
+    newT = pd.DataFrame()
+    newR = pd.DataFrame()
+    for i in dist.keys():
+        cut = int(dist[i].shape[0]*0.8)
+        train = dist[i].iloc[:cut]
+        test = dist[i].iloc[cut:]
+        newT = pd.concat([newT, train], axis=0, ignore_index=True)
+        newR = pd.concat([newR, test], axis=0, ignore_index=True)
+    return newT, newR
+
+def splitterY(dist):
+    newT = np.asarray([])
+    newR = np.asarray([])
+    for i in dist.keys():
+        cut = int(dist[i].shape[0]*0.8)
+        train = dist[i][:cut]
+        test = dist[i][cut:]
+        newT = np.append(newT, train)
+        newR = np.append(newR, test)
+    return newT, newR
 
 def get_weighted_classes(weights, classes):
     '''
@@ -194,7 +186,7 @@ def check(X, Y):
     ly = len(Y)
     if lx != ly:
         temp = min(lx,ly)
-        return X[:temp], Y[:temp]
+        return (X[:temp]), (Y[:temp])
     else:
         return X, Y
 
@@ -204,7 +196,7 @@ def train(X_train, X_test, Y_train, Y_test):
     model.add(layers.Flatten(input_shape = [82]))
     #model.add(layers.Dense(28000, activation = tf.nn.relu))
     #model.add(layers.Dense(20000, activation = tf.nn.relu))
-    model.add(layers.Dense(16000, activation = tf.nn.relu))
+    model.add(layers.Dense(512, activation = tf.nn.relu))
     #model.add(layers.Dense(12000, activation = tf.nn.relu))
     #model.add(layers.Dense(8000, activation = tf.nn.relu))
     #model.add(layers.Dense(6000, activation = tf.nn.relu))
@@ -224,17 +216,19 @@ def train(X_train, X_test, Y_train, Y_test):
     # print('Correct Prediction (%): ', accuracy_score(Y_test, model.predict(X_test), normalize=True)*100.0)
     return model, test_acc
 
-def TrueYTransform(prices):
+def TrueYTransform(dist):
     '''rescale price (Y) into 0/1'''
-    temp=[]
-    for i in range(len(prices)-1):
-        percentageR = ((prices[i+1]-prices[i])/prices[i])
-        if percentageR >=0:
-            temp+=[1]
-        else:
-  
-            temp+=[0]
-    return np.asarray(temp)
+    new = {}
+    for i in dist.keys():
+        new[i]=np.asarray([])
+        for j in range(dist[i].shape[0]-1):
+            temp1 = dist[i]['close'][j]
+            temp2 = dist[i]['close'][j+1]
+            if temp1 < temp2:
+                new[i] = np.append(new[i], [0])
+            else:
+                new[i] = np.append(new[i], [1])
+    return new
 
 def PriceToEarningPerShare(prices):
     '''Earnings per share: a portion of a company's profit that is allocated to one share of stock.
@@ -253,10 +247,12 @@ def PriceToEarningPerShare(prices):
 
 def GetAlphasAll(dist):
     '''Return dataframe of companies with corresponding alpha values'''
-    df = pd.DataFrame()
-    for i in dist:
-        df = pd.concat([df, GetAlphas(dist[i].copy())], ignore_index=True) # unite the percentage return, quantum and original data of all the companies into one big dataframe
-    return alp1.get_alpha(df).dropna().drop(['adj close', 'close', 'high', 'low', 'open', 'volume', 'amount', 'pctr'], axis=1) # only return the values of alphas of all the companies in alp1.py 
+    df = {}
+    for i in dist.keys():
+        temp = GetAlphas(dist[i].copy())
+        if (temp.empty==False):
+            df[i] = alp1.get_alpha(temp).drop(['adj close', 'close', 'high', 'low', 'open', 'volume', 'amount', 'pctr'], axis=1).fillna(value=0)
+    return df
 
 def GetAlphas(df):
     '''return the percentage return and quantum'''
@@ -264,15 +260,15 @@ def GetAlphas(df):
     pctr = []
     amount = []
     for i in range(df.shape[0]-1):
-        pctr += [(df['close'][i+1]-df['close'][i])/df['close'][i]] # percentage of return
-        amount += [df['close'][i]*df['volume'][i]] # quantum (amount) = price * volume
+        pctr += [(df['close'][i+1]-df['close'][i])/df['close'][i]] 
+        amount += [df['close'][i]*df['volume'][i]]
     new['pctr'] = pctr
     new['amount'] = amount
     return new
 
-def RMCompare(test, acc):
+def RMCompare(test):
     '''Generate comparison between machine and random machine'''
-    ran = random_simul(500,[0,1])
+    ran = random_simul(505,[0,1])
     ran, test = check(ran, test)
     temp = ran-test
     ranAcc = 0
@@ -280,9 +276,6 @@ def RMCompare(test, acc):
         if i == 0:
             ranAcc += 1
     ranAcc = ranAcc / len(ran)
-    model, iacc = main()
-    print('Model Accuracy:', iacc, 'Random Accuracy:', acc)
-    return
+    return ranAcc
 #test area
-
-
+main()
