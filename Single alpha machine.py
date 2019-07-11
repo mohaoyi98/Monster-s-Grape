@@ -2,9 +2,6 @@
 import pandas as pd
 import tensorflow as tf
 import numpy as np
-from sklearn.ensemble import RandomForestClassifier as RFC
-from sklearn.metrics import accuracy_score 
-from sklearn.metrics import classification_report
 import yfinance as yf
 import stockstats as SS
 from tensorflow.contrib import rnn
@@ -20,14 +17,12 @@ symbols = list(symbols['Symbol'])
 
 
 # Available types from Yahoo Finance
-tem = ['Adj Close', 'Close', 'High', 'Low', 'Open', 'Volume']
+#tem = ['Adj Close', 'Close', 'High', 'Low', 'Open', 'Volume']
 def YFI():
     '''import stock data from yahoo finance'''
     # Get data from Yahoo Finance
     # Turn into Stockstats dataframe, did some initial cleaning
     dist = {}
-    #today = str(dt.datetime.today())[:10]
-    #startdate = str(dt.datetime.today()-dt.timedelta(days=360))[:10]
     
     # get monthly data from yahoo finance 
     hist = yf.download(symbols, period = '5y', interval = '1mo', group_by = 'ticker', auto_adjust = False)
@@ -41,7 +36,7 @@ def YFI():
             na = na+[k]
     for i in na:
         del dist[i]
-    # replace sporadic NAs with previous day's pricing data
+    # delete invalid data
 
     for i in dist.keys():
         dist[i].dropna()
@@ -96,6 +91,7 @@ def main():
     dist = YFI()
     # print(dist)
     #feas = CreateFeatures(dist)
+    print(check)
     X = GetAlphasAll(dist)
  
     Y = TrueYTransform(dist)
