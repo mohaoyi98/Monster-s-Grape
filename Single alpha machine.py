@@ -26,6 +26,7 @@ def YFI():
     
     # get monthly data from yahoo finance 
     hist = yf.download(symbols, period = '5y', interval = '1mo', group_by = 'ticker', auto_adjust = False)
+    print('hist')
     for i in symbols:
         dist[i] = SS.StockDataFrame.retype(hist[i].copy())
     # Data cleaning
@@ -91,7 +92,7 @@ def main():
     dist = YFI()
     # print(dist)
     #feas = CreateFeatures(dist)
-    print(check)
+    print('check')
     X = GetAlphasAll(dist)
  
     Y = TrueYTransform(dist)
