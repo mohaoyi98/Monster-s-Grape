@@ -6,7 +6,6 @@ import yfinance as yf
 import stockstats as SS
 from tensorflow.contrib import rnn
 from tensorflow.keras import datasets, layers, models
-import datetime as dt
 import random
 
 import alp1 # import alpha features in alp1.py
@@ -115,7 +114,17 @@ def main():
             selectedAlphas += [j]
     if len(selectedAlphas) >=40:
         selectedAlphas = selectedAlphas[:40]
-    return selectedAlphas #return the trained model
+    alphaIndex = extractAlpha(selectedAlphas)
+    model, acc = train(X_train[alphaIndex], X_test[alphaIndex], Y_train, Y_test)
+    print('Final Accuracy:', acc)
+    print(RMCompare(Y_test))
+    return model #return the trained model
+
+def extractAlpha(lis):
+    res = []
+    for i in lis:
+        res+= [j[1]]
+    return res
 
 def splitterX(dist):
     newT = pd.DataFrame()
@@ -289,7 +298,7 @@ def GetAlphas(df):
 
 def RMCompare(test):
     '''Generate comparison between machine and random machine'''
-    ran = random_simul(505,[0,1])
+    ran = random_simul(len(test),[0,1])
     ran, test = check(ran, test)
     temp = ran-test
     ranAcc = 0
@@ -299,4 +308,4 @@ def RMCompare(test):
     ranAcc = ranAcc / len(ran)
     return ranAcc
 #test area
-print(main())
+main()
