@@ -1,23 +1,3 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Thu Jul 11 15:32:47 2019
-
-@author: sheng
-"""
-
-# -*- coding: utf-8 -*-
-"""
-Created on Wed Jul  3 12:20:26 2019
-
-@author: sheng
-"""
-
-# -*- coding: utf-8 -*-
-"""
-Created on Sat Jun 22 14:48:16 2019
-
-@author: sheng
-"""
 
 import pandas as pd
 import tensorflow as tf
@@ -128,12 +108,17 @@ def main():
     alphas = X_train.columns
     alphaAcc = []
     for i in alphas:
-        modeli, iacc, t = train(X_train[i], X_test[i], Y_train, Y_test)
+        modeli, iacc, t = trainSingleAlpha(X_train[i], X_test[i], Y_train, Y_test)
         alphaAcc+=[[iacc, i, t]]
     alphaAcc = alphaAcc.sort()
+    selectedAlphas = []
     for j in alphaAcc:
         print(j[1], ':', j[0], 'loss != nan:', j[2])
-    return modeli #return the trained model
+        if j[3]==1:
+            selectedAlphas += [j]
+    if len(selectedAlphas) >=40:
+        selectedAlphas = selectedAlphas[:40]
+    return selectedAlphas #return the trained model
 
 def splitterX(dist):
     newT = pd.DataFrame()
@@ -201,7 +186,7 @@ def check(X, Y):
     else:
         return X, Y
 
-def train(X_train, X_test, Y_train, Y_test):
+def trainSingleAlpha(X_train, X_test, Y_train, Y_test):
     '''Train and test a regular neural network'''
     model = models.Sequential()
     model.add(layers.Flatten(input_shape = [1]))
@@ -228,6 +213,32 @@ def train(X_train, X_test, Y_train, Y_test):
         temp = 0
     # print('Correct Prediction (%): ', accuracy_score(Y_test, model.predict(X_test), normalize=True)*100.0)
     return model, test_acc, temp
+
+def train(X_train, X_test, Y_train, Y_test):
+    '''Train and test a regular neural network'''
+    model = models.Sequential()
+    model.add(layers.Flatten(input_shape = [len(X_train.columns)]))
+    #model.add(layers.Dense(28000, activation = tf.nn.relu))
+    #model.add(layers.Dense(20000, activation = tf.nn.relu))
+    model.add(layers.Dense(512, activation = tf.nn.relu))
+    #model.add(layers.Dense(12000, activation = tf.nn.relu))
+    #model.add(layers.Dense(8000, activation = tf.nn.relu))
+    #model.add(layers.Dense(6000, activation = tf.nn.relu))
+    #model.add(layers.Dense(4000, activation = tf.nn.relu))
+    #model.add(layers.Dense(2000, activation = tf.nn.relu))
+    #model.add(layers.Dense(1000, activation = tf.nn.relu))
+    #model.add(layers.Dense(500, activation = tf.nn.relu))
+    model.add(layers.Dense(256, activation = tf.nn.relu))
+    model.add(layers.Dense(16, activation=tf.nn.softmax))
+    # model.summary()
+    model.compile(optimizer='adam', 
+                  loss='sparse_categorical_crossentropy',
+                  metrics=['accuracy'])
+    model.fit(X_train, Y_train, epochs=5, verbose = 1)
+    test_loss, test_acc = model.evaluate(X_test, Y_test, verbose = 1)
+    
+    # print('Correct Prediction (%): ', accuracy_score(Y_test, model.predict(X_test), normalize=True)*100.0)
+    return model, test_acc
 
 def TrueYTransform(dist):
     '''rescale price (Y) into 0/1'''
@@ -291,4 +302,4 @@ def RMCompare(test):
     ranAcc = ranAcc / len(ran)
     return ranAcc
 #test area
-main()
+print(main())
