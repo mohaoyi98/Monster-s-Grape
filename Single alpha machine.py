@@ -24,10 +24,9 @@ def YFI():
     dist = {}
     
     # get monthly data from yahoo finance 
-    hist = yf.download(symbols, period = '5y', interval = '1mo', group_by = 'ticker', auto_adjust = False)
-    print('hist')
+    #hist = yf.download(symbols, period = '5y', interval = '1mo', group_by = 'ticker', auto_adjust = False)
     for i in symbols:
-        dist[i] = SS.StockDataFrame.retype(hist[i].copy())
+        dist[i] = SS.StockDataFrame.retype(yf.download(i, period = '5y', interval = '1mo', auto_adjust = False))
     # Data cleaning
     # delete empty dataframes or dataframes with large amount of NAs.
     na = []
@@ -307,5 +306,11 @@ def RMCompare(test):
             ranAcc += 1
     ranAcc = ranAcc / len(ran)
     return ranAcc
+
+def SPpctr():
+    prices = yf.download('^GSPC', period = '2mo', interval = '1mo')
+    price1 = prices['Close'][0]
+    price2 = prices['Close'][1]
+    return (price2-price1)/price1
 #test area
 main()
