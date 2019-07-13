@@ -122,7 +122,7 @@ def main():
     if len(selectedAlphas) >=25:
         selectedAlphas = selectedAlphas[:25]
     alphaIndex = extractAlpha(selectedAlphas)
-    print(alphaIndex)
+    print('index',alphaIndex)
     model, acc = train(X_train[alphaIndex], X_test[alphaIndex], Y_train, Y_test)
     print('Final Accuracy:', acc)
     print(RMCompare(Y_test))
@@ -137,7 +137,7 @@ def PortVSSP500(model, latests):
         pctrs[i] = a
         scores += [[model.predict(latests[i].iloc[0:1]), i]]
     scores.sort(reverse=True)
-    print(scores)
+    print('scores:',scores)
     temp = 0
     for i in scores[:10]:
         temp+=pctrs[i[1]]/10.0
