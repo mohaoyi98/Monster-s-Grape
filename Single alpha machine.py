@@ -60,8 +60,12 @@ def YFI():
             na = na+[k]
     for i in na:
         del dist[i] 
+    
+    latests = {}
+    for i in dist:
+        latests[i] = dist[i].iloc[-2:]
 
-    return dist
+    return dist, latests
 
 def CreateFeatures(dist):
     '''return all kinds of index; we can use them as features'''
@@ -87,7 +91,7 @@ def CreateFeatures(dist):
     return new
 
 def main():
-    dist = YFI()
+    dist, latests = YFI()
     # print(dist)
     #feas = CreateFeatures(dist)
     print('check')
@@ -117,13 +121,29 @@ def main():
             selectedAlphas += [alphaAcc[j]]
     if len(selectedAlphas) >=25:
         selectedAlphas = selectedAlphas[:25]
-    print(selectedAlphas)
     alphaIndex = extractAlpha(selectedAlphas)
-    print(alphaIndex)
     model, acc = train(X_train[alphaIndex], X_test[alphaIndex], Y_train, Y_test)
     print('Final Accuracy:', acc)
     print(RMCompare(Y_test))
+    print(PortVSSP500(model, latests))
     return model #return the trained model
+
+def PortVSSP500(model, latests):
+    pctrs = {}
+    scores = []
+    for i in latests:
+        a = (latests[i]['close'][1] - latests[i]['close'][0])/latests[i]['close'][0]
+        pctrs[i] = a
+        scores += [[model.predict(latests[i].iloc[0]), i]]
+    scores.sort(reverse=True)
+    print(scores)
+    temp = 0
+    for i in scores[:10]:
+        temp+=pctrs[i[1]]/10.0
+    sppctr = SPpctr()
+    print('S&P500:', sppctr, 'Portfolio return:', temp)
+    return
+    
 
 def extractAlpha(lis):
     res = []
@@ -217,8 +237,8 @@ def trainSingleAlpha(X_train, X_test, Y_train, Y_test):
     model.compile(optimizer='adam', 
                   loss='sparse_categorical_crossentropy',
                   metrics=['accuracy'])
-    model.fit(X_train, Y_train, epochs=5, verbose = 1)
-    test_loss, test_acc = model.evaluate(X_test, Y_test, verbose = 1)
+    model.fit(X_train, Y_train, epochs=5, verbose = 0)
+    test_loss, test_acc = model.evaluate(X_test, Y_test, verbose = 0)
     print(test_loss, test_acc)
     temp = 1
     if pd.isna(test_loss):
@@ -247,8 +267,8 @@ def train(X_train, X_test, Y_train, Y_test):
     model.compile(optimizer='adam', 
                   loss='sparse_categorical_crossentropy',
                   metrics=['accuracy'])
-    model.fit(X_train, Y_train, epochs=5, verbose = 1)
-    test_loss, test_acc = model.evaluate(X_test, Y_test, verbose = 1)
+    model.fit(X_train, Y_train, epochs=5, verbose = 0)
+    test_loss, test_acc = model.evaluate(X_test, Y_test, verbose = 0)
     
     # print('Correct Prediction (%): ', accuracy_score(Y_test, model.predict(X_test), normalize=True)*100.0)
     return model, test_acc
@@ -322,3 +342,4 @@ def SPpctr():
     return (price2-price1)/price1
 #test area
 main()
+
