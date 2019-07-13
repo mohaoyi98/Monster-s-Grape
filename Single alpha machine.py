@@ -51,7 +51,7 @@ def YFI():
         for j in ['close', 'open', 'high', 'low']:
             for k in range(dist[i][j].shape[0]-1):
                 a = dist[i][j][k]
-                b = dist[i][j][k+1]
+                b = dist[i][j][k+1].copy()
                 if a==b:
                     dist[i][j][k+1] = b+0.001
     na = []
@@ -103,17 +103,23 @@ def main():
     alphas = X_train.columns
     alphaAcc = []
     for i in alphas:
+        print(i)
         modeli, iacc, t = trainSingleAlpha(X_train[i], X_test[i], Y_train, Y_test)
-        alphaAcc+=[[iacc, i, t]]
-    alphaAcc = alphaAcc.sort()
+        
+        alphaAcc+= [[iacc, i, t]]
+
+    alphaAcc.sort(reverse=True)
+    print(alphaAcc)
     selectedAlphas = []
-    for j in alphaAcc:
-        print(j[1], ':', j[0], 'loss != nan:', j[2])
-        if j[3]==1:
-            selectedAlphas += [j]
-    if len(selectedAlphas) >=40:
-        selectedAlphas = selectedAlphas[:40]
+    for j in range(len(alphaAcc)):
+        print(alphaAcc[j][1], ':', alphaAcc[j][0], 'loss != nan:', alphaAcc[j][2])
+        if alphaAcc[j][2]==1:
+            selectedAlphas += [alphaAcc[j]]
+    if len(selectedAlphas) >=25:
+        selectedAlphas = selectedAlphas[:25]
+    print(selectedAlphas)
     alphaIndex = extractAlpha(selectedAlphas)
+    print(alphaIndex)
     model, acc = train(X_train[alphaIndex], X_test[alphaIndex], Y_train, Y_test)
     print('Final Accuracy:', acc)
     print(RMCompare(Y_test))
@@ -122,7 +128,7 @@ def main():
 def extractAlpha(lis):
     res = []
     for i in lis:
-        res+= [j[1]]
+        res+= [i[1]]
     return res
 
 def splitterX(dist):
@@ -213,9 +219,11 @@ def trainSingleAlpha(X_train, X_test, Y_train, Y_test):
                   metrics=['accuracy'])
     model.fit(X_train, Y_train, epochs=5, verbose = 1)
     test_loss, test_acc = model.evaluate(X_test, Y_test, verbose = 1)
+    print(test_loss, test_acc)
     temp = 1
     if pd.isna(test_loss):
         temp = 0
+
     # print('Correct Prediction (%): ', accuracy_score(Y_test, model.predict(X_test), normalize=True)*100.0)
     return model, test_acc, temp
 
