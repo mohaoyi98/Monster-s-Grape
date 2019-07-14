@@ -90,7 +90,7 @@ def main():
     dist = YFI()
     # print(dist)
     #feas = CreateFeatures(dist)
-    print('check')
+    #print('check')
     X = GetAlphasAll(dist)
     Y = TrueYTransform(dist)
 
@@ -99,6 +99,7 @@ def main():
     Y_train, Y_test = splitterY(Y)
     X_train, Y_train = check(X_train, Y_train)
     X_test, Y_test = check(X_test, Y_test)
+    #print(Y_train)
     alphas = X_train.columns
     alphaAcc = []
     for i in alphas:
@@ -108,20 +109,20 @@ def main():
         alphaAcc+= [[iacc, i, t]]
 
     alphaAcc.sort(reverse=True)
-    print(alphaAcc)
+    #print(alphaAcc)
     selectedAlphas = []
     for j in range(len(alphaAcc)):
         print(alphaAcc[j][1], ':', alphaAcc[j][0], 'loss != nan:', alphaAcc[j][2])
         if alphaAcc[j][2]==1:
             selectedAlphas += [alphaAcc[j]]
-    if len(selectedAlphas) >=25:
-        selectedAlphas = selectedAlphas[:25]
+    if len(selectedAlphas) >=15:
+        selectedAlphas = selectedAlphas[:15]
     alphaIndex = extractAlpha(selectedAlphas)
-    print('index',alphaIndex)
+    #print('index',alphaIndex)
     model, acc = train(X_train[alphaIndex], X_test[alphaIndex], Y_train, Y_test)
     print('Final Accuracy:', acc)
     print(RMCompare(Y_test))
-    print(PortVSSP500(model, dist, X.copy(), alphaIndex))
+    PortVSSP500(model, dist, X.copy(), alphaIndex)
     return model #return the trained model
 
 def PortVSSP500(model, dist, X, alphaIndex):
