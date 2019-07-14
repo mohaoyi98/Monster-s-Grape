@@ -130,15 +130,16 @@ def PortVSSP500(model, dist, X, alphaIndex):
     scores = []
     for i in dist:
         if dist[i].shape[0]>1:
-            a = (dist[i]['close'][-2] - dist[i]['close'][-1])/dist[i]['close'][-1]
+            a = (dist[i]['close'][-1] - dist[i]['close'][-2])/dist[i]['close'][-2]
             pctrs[i] = a
-            b = model.predict(X[i][alphaIndex])[-1][0]
+            b = model.predict(X[i][alphaIndex])[-2][0]
             scores += [[b, i]]
 
     scores.sort(reverse=True)
 
     temp = 0
     for i in scores[:10]:
+        print(pctrs[i[1]])
         temp+=pctrs[i[1]]/10.0
     sppctr = SPpctr()
     print('S&P500:', sppctr, 'Portfolio return:', temp)
