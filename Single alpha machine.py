@@ -60,12 +60,8 @@ def YFI():
             na = na+[k]
     for i in na:
         del dist[i] 
-    
-    latests = {}
-    for i in dist:
-        latests[i] = dist[i].iloc[-2:]
 
-    return dist, latests
+    return dist
 
 def CreateFeatures(dist):
     '''return all kinds of index; we can use them as features'''
@@ -91,12 +87,11 @@ def CreateFeatures(dist):
     return new
 
 def main():
-    dist, latests = YFI()
+    dist = YFI()
     # print(dist)
     #feas = CreateFeatures(dist)
     print('check')
     X = GetAlphasAll(dist)
- 
     Y = TrueYTransform(dist)
 
 
@@ -126,16 +121,19 @@ def main():
     model, acc = train(X_train[alphaIndex], X_test[alphaIndex], Y_train, Y_test)
     print('Final Accuracy:', acc)
     print(RMCompare(Y_test))
-    print(PortVSSP500(model, latests))
+    print(PortVSSP500(model, dist, X.copy(), alphaIndex))
     return model #return the trained model
 
-def PortVSSP500(model, latests):
+def PortVSSP500(model, dist, X, alphaIndex):
     pctrs = {}
     scores = []
-    for i in latests:
-        a = (latests[i]['close'][1] - latests[i]['close'][0])/latests[i]['close'][0]
-        pctrs[i] = a
-        scores += [[model.predict(latests[i].iloc[0:1]), i]]
+    for i in dist:
+        if dist[i].shape[0]>1:
+            a = (dist[i]['close'][-2] - dist[i]['close'][-1])/dist[i]['close'][-1]
+            pctrs[i] = a
+            b = model.predict(X[i][alphaIndex])[-1][0]
+            scores += [[b, i]]
+    print(scores)
     scores.sort(reverse=True)
     print('scores:',scores)
     temp = 0
@@ -250,6 +248,7 @@ def trainSingleAlpha(X_train, X_test, Y_train, Y_test):
 
 def train(X_train, X_test, Y_train, Y_test):
     '''Train and test a regular neural network'''
+    print(X_train)
     model = models.Sequential()
     model.add(layers.Flatten(input_shape = [len(X_train.columns)]))
     #model.add(layers.Dense(28000, activation = tf.nn.relu))
