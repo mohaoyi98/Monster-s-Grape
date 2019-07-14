@@ -115,8 +115,8 @@ def main():
         print(alphaAcc[j][1], ':', alphaAcc[j][0], 'loss != nan:', alphaAcc[j][2])
         if alphaAcc[j][2]==1:
             selectedAlphas += [alphaAcc[j]]
-    if len(selectedAlphas) >=15:
-        selectedAlphas = selectedAlphas[:15]
+    if len(selectedAlphas) >=40:
+        selectedAlphas = selectedAlphas[:40]
     alphaIndex = extractAlpha(selectedAlphas)
     #print('index',alphaIndex)
     model, acc = train(X_train[alphaIndex], X_test[alphaIndex], Y_train, Y_test)
