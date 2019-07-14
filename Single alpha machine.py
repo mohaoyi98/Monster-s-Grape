@@ -133,9 +133,9 @@ def PortVSSP500(model, dist, X, alphaIndex):
             pctrs[i] = a
             b = model.predict(X[i][alphaIndex])[-1][0]
             scores += [[b, i]]
-    print(scores)
+
     scores.sort(reverse=True)
-    print('scores:',scores)
+
     temp = 0
     for i in scores[:10]:
         temp+=pctrs[i[1]]/10.0
