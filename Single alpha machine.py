@@ -25,7 +25,7 @@ def YFI():
     
     # get monthly data from yahoo finance 
     #hist = yf.download(symbols, period = '5y', interval = '1mo', group_by = 'ticker', auto_adjust = False)
-    for i in symbols:
+    for i in symbols[:20]:
         dist[i] = SS.StockDataFrame.retype(yf.download(i, period = '5y', interval = '1mo', auto_adjust = False))
     # Data cleaning
     # delete empty dataframes or dataframes with large amount of NAs.
@@ -112,7 +112,6 @@ def main():
     #print(alphaAcc)
     selectedAlphas = []
     for j in range(len(alphaAcc)):
-        print(alphaAcc[j][1], ':', alphaAcc[j][0], 'loss != nan:', alphaAcc[j][2])
         if alphaAcc[j][2]==1:
             selectedAlphas += [alphaAcc[j]]
     if len(selectedAlphas) >=40:
@@ -128,19 +127,23 @@ def main():
 def PortVSSP500(model, dist, X, alphaIndex):
     pctrs = {}
     scores = []
+    tempp = []
     for i in dist:
         if dist[i].shape[0]>1:
             a = (dist[i]['close'][-1] - dist[i]['close'][-2])/dist[i]['close'][-2]
             pctrs[i] = a
-            b = model.predict(X[i][alphaIndex])[-2][0]
-            scores += [[b, i]]
-
+            tempp += [[a,i]]
+            b = model.predict(X[i][alphaIndex])
+            scores += [[b[-2][1], i]]
+    tempp.sort(reverse=True)
     scores.sort(reverse=True)
+    for i in range(len(tempp)):
+        print(tempp[i][1], scores[i][1])
 
     temp = 0
     for i in scores[:10]:
         print(pctrs[i[1]])
-        temp+=pctrs[i[1]]/10.0
+        temp+=pctrs[i[1]]/10
     sppctr = SPpctr()
     print('S&P500:', sppctr, 'Portfolio return:', temp)
     return
@@ -233,7 +236,8 @@ def trainSingleAlpha(X_train, X_test, Y_train, Y_test):
     #model.add(layers.Dense(1000, activation = tf.nn.relu))
     #model.add(layers.Dense(500, activation = tf.nn.relu))
     model.add(layers.Dense(256, activation = tf.nn.relu))
-    model.add(layers.Dense(16, activation=tf.nn.softmax))
+    model.add(layers.Dense(16, activation=tf.nn.relu))
+    model.add(layers.Dense(2, activation=tf.nn.softmax))
     # model.summary()
     model.compile(optimizer='adam', 
                   loss='sparse_categorical_crossentropy',
@@ -250,7 +254,6 @@ def trainSingleAlpha(X_train, X_test, Y_train, Y_test):
 
 def train(X_train, X_test, Y_train, Y_test):
     '''Train and test a regular neural network'''
-    print(X_train)
     model = models.Sequential()
     model.add(layers.Flatten(input_shape = [len(X_train.columns)]))
     #model.add(layers.Dense(28000, activation = tf.nn.relu))
@@ -264,7 +267,8 @@ def train(X_train, X_test, Y_train, Y_test):
     #model.add(layers.Dense(1000, activation = tf.nn.relu))
     #model.add(layers.Dense(500, activation = tf.nn.relu))
     model.add(layers.Dense(256, activation = tf.nn.relu))
-    model.add(layers.Dense(16, activation=tf.nn.softmax))
+    model.add(layers.Dense(16, activation=tf.nn.relu))
+    model.add(layers.Dense(2, activation=tf.nn.softmax))
     # model.summary()
     model.compile(optimizer='adam', 
                   loss='sparse_categorical_crossentropy',
