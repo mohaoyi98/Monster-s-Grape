@@ -25,7 +25,7 @@ def YFI():
     
     # get monthly data from yahoo finance 
     #hist = yf.download(symbols, period = '5y', interval = '1mo', group_by = 'ticker', auto_adjust = False)
-    for i in symbols[:20]:
+    for i in symbols:
         dist[i] = SS.StockDataFrame.retype(yf.download(i, period = '5y', interval = '1mo', auto_adjust = False))
     # Data cleaning
     # delete empty dataframes or dataframes with large amount of NAs.
@@ -134,11 +134,10 @@ def PortVSSP500(model, dist, X, alphaIndex):
             pctrs[i] = a
             tempp += [[a,i]]
             b = model.predict(X[i][alphaIndex])
-            scores += [[b[-2][1], i]]
+            scores += [[b[-2][0], i]]
     tempp.sort(reverse=True)
     scores.sort(reverse=True)
-    for i in range(len(tempp)):
-        print(tempp[i][1], scores[i][1])
+
 
     temp = 0
     for i in scores[:10]:
