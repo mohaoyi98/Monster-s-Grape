@@ -126,25 +126,29 @@ def main():
 
 def PortVSSP500(model, dist, X, alphaIndex):
     pctrs = {}
-    scores = []
+    selected = []
     tempp = []
     for i in dist:
         if dist[i].shape[0]>1:
             a = (dist[i]['close'][-1] - dist[i]['close'][-2])/dist[i]['close'][-2]
             pctrs[i] = a
             tempp += [[a,i]]
-            b = model.predict(X[i][alphaIndex])
-            scores += [[b[-2][0], i]]
+            b = model.predict(X[i][alphaIndex])[-2][0]
+            if b > 0.9:
+                selected += [i]
     tempp.sort(reverse=True)
-    scores.sort(reverse=True)
 
-
+    port = []
     temp = 0
-    for i in scores[:10]:
-        print(pctrs[i[1]])
-        temp+=pctrs[i[1]]/10
+    index = 0
+    while ((len(port)<10) and (index<len(tempp))):
+        if tempp[index][1] in selected:
+            port += tempp[index][1]
+            print(tempp[index][0])
+            temp += tempp[index][0]/10
+        index += 1
     sppctr = SPpctr()
-    print('S&P500:', sppctr, 'Portfolio return:', temp)
+    print('S&P500:', sppctr, 'Portfolio return:', temp, 'Portfolio:', port)
     return
     
 
