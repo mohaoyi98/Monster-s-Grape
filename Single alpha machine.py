@@ -236,7 +236,7 @@ def trainSingleAlpha(X_train, X_test, Y_train, Y_test):
     #model.add(layers.Dense(500, activation = tf.nn.relu))
     model.add(layers.Dense(256, activation = tf.nn.relu))
     model.add(layers.Dense(16, activation=tf.nn.relu))
-    model.add(layers.Dense(2, activation=tf.nn.softmax))
+    model.add(layers.Dense(8, activation=tf.nn.softmax))
     # model.summary()
     model.compile(optimizer='adam', 
                   loss='sparse_categorical_crossentropy',
@@ -267,7 +267,7 @@ def train(X_train, X_test, Y_train, Y_test):
     #model.add(layers.Dense(500, activation = tf.nn.relu))
     model.add(layers.Dense(256, activation = tf.nn.relu))
     model.add(layers.Dense(16, activation=tf.nn.relu))
-    model.add(layers.Dense(2, activation=tf.nn.softmax))
+    model.add(layers.Dense(8, activation=tf.nn.softmax))
     # model.summary()
     model.compile(optimizer='adam', 
                   loss='sparse_categorical_crossentropy',
