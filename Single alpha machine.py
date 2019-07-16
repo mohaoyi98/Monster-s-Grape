@@ -133,19 +133,25 @@ def main():
 def Backtest(numOfMonth, alphaIndex, initial, dist, X, Y):
     today1 = datetime.date.today() - relativedelta(days = datetime.date.today().day-1)
     dataPoints = []
-    for i in range(numOfMonth):
+    for i in range(numOfMonth-1):
+
         startD = i
         startDate = today1 - relativedelta(months=numOfMonth-i-1)
         endDate =  today1 - relativedelta(months=numOfMonth-i-4)
         endD = i+3
+        print(startDate,endDate)
         tempDist, tempX, tempY = ExtractDist(dist.copy(), X.copy(), Y.copy(), startDate, endDate, startD, endD)
         tempX = splitterX2(tempX)
         tempY = splitterY2(tempY)
-        model = train2(tempX[alphaIndex], tempY)
-        Portfolio, AvgPctr = SelectAndPCTR(model, dist, X.copy(), alphaIndex, startD, endD, startDate, endDate)
-        initial = initial*(1+AvgPctr)
-        dataPoints += [[i,initial]]
-        print(startDate,endDate)
+        print(tempX, tempY)
+        if tempX.empty == False:
+            model = train2(tempX[alphaIndex], tempY)
+            Portfolio, AvgPctr = SelectAndPCTR(model, dist, X.copy(), alphaIndex, startD, endD, startDate, endDate)
+            print(Portfolio, AvgPctr)
+            initial = initial*(1+AvgPctr)
+            dataPoints += [[i,initial]]
+
+        
     return initial
 
 
@@ -154,18 +160,19 @@ def ExtractDist(dist, X, Y, startDate, endDate, startD, endD):
     tempX = {}
     tempY = {}
     for j in dist.keys():
-            indexes = dist[j].index.values
-            if checkdate(startDate, indexes[0], endDate, indexes[-2]):
+            indices = dist[j].index.values
+            startD, endD = caliDate(startD, endD, startDate, endDate, indices)
+            if checkdate(startDate, indices[0], endDate, indices[-1]):
                 '''Data is valid for selected time'''
-                tempDist[j] = dist[j].iloc[startD:endD]
-                tempX[j] = X[j].iloc[startD:endD]
-                tempY[j] = Y[j][startD:endD]
+                tempDist[j] = dist[j].loc[startDate:endDate]
+                tempX[j] = X[j].loc[startDate:endDate]
+                tempY[j] = Y[j][startD:endD+1]
     return tempDist.copy(), tempX.copy(), tempY.copy()
 
 def checkdate(start, startc, end, endc):
     start = np.datetime64(start)
     end = np.datetime64(end)
-    if start >= startc and end <= endc:
+    if start >= startc and end < endc:
         return True
     else:
         return False
@@ -174,10 +181,11 @@ def SelectAndPCTR(model, dist, X, alphaIndex, startD, endD, startDate, endDate):
     scores = []
     for i in dist:
         indices = dist[i].index.values
+        startD, endD = caliDate(startD, endD, startDate, endDate, indices)
         if checkdate(startDate, indices[0], endDate+relativedelta(months=1), indices[-1]):
-            a = (dist[i]['close'][endD] - dist[i]['close'][endD+1])/dist[i]['close'][endD+1]
-            b = model.predict(X[i][alphaIndex])
-            scores += [[b[endD+1][0], a, i]]
+            a = (dist[i]['close'].loc[endDate+relativedelta(months=1)] - dist[i]['close'].loc[endDate])/dist[i]['close'].loc[endDate]
+            b = model.predict(X[i][alphaIndex].loc[startDate:endDate])
+            scores += [[b[-1][0], a, i]]
     scores.sort(reverse=True)
     temp = 0
     for i in scores[:10]:
@@ -186,6 +194,11 @@ def SelectAndPCTR(model, dist, X, alphaIndex, startD, endD, startDate, endDate):
     for j in scores[:10]:
         res+=[j[2]]
     return res, temp
+
+def caliDate(startD, endD, startDate, endDate, indices):
+    sd = np.datetime64(startDate)
+    ind = np.where(indices == sd)[0][0]
+    return ind, ind+3
 
 def extractAlpha(lis):
     res = []
@@ -425,3 +438,4 @@ def SPpctr():
     return [price1, price2]
 #test area
 a = main()
+print(a)
