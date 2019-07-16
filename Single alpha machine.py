@@ -18,7 +18,7 @@ symbols = list(symbols['Symbol'])
 
 
 # Available types from Yahoo Finance
-#tem = ['Adj Close', 'Close', 'High', 'Low', 'Open', 'Volume']
+tem = ['adj close', 'close', 'high', 'low', 'open', 'volume']
 def YFI(leng):
     '''import stock data from yahoo finance'''
     # Get data from Yahoo Finance
@@ -27,7 +27,7 @@ def YFI(leng):
     
     # get monthly data from yahoo finance 
     #hist = yf.download(symbols, period = '5y', interval = '1mo', group_by = 'ticker', auto_adjust = False)
-    for i in symbols[:10]:
+    for i in symbols[:100]:
         dist[i] = SS.StockDataFrame.retype(yf.download(i, period = leng, interval = '1mo', auto_adjust = False))
     # Data cleaning
     # delete empty dataframes or dataframes with large amount of NAs.
@@ -39,21 +39,25 @@ def YFI(leng):
         del dist[i]
     # delete invalid data
 
+    #dist['AES'] = dist['AES'][dist['AES'].close.isna() == False]
+
     for i in dist.keys():
-        dist[i].dropna()
+        dist[i] = dist[i][dist[i].close.isna() == False]
+        '''dist[i].dropna()
         temp = dist[i].index.values
         tflist = dist[i]['close'].isna()
         temp2 = []
         for j in range(len(dist[i]['close'])):
             if tflist[j]:
                 temp2 =temp2 + [temp[j]]
-        dist[i] = dist[i].drop(temp2)
+        dist[i] = dist[i].drop(temp2)'''
     
     for i in dist.keys():
-        temp = dist[i].index.values[-1]
-        if str(temp)[8:10] != '01':
-            dist[i] = dist[i].drop(temp)
-        
+        temp = dist[i].index.values
+        for j in temp:
+            if str(j)[8:10] != '01':
+                dist[i] = dist[i].drop(j)
+
     for i in dist.keys():
         for j in ['close', 'open', 'high', 'low']:
             for k in range(dist[i][j].shape[0]-1):
@@ -61,6 +65,7 @@ def YFI(leng):
                 b = dist[i][j][k+1].copy()
                 if a==b:
                     dist[i][j][k+1] = b+0.001
+
     na = []
     for k in dist:
         if(dist[k].empty):
@@ -105,7 +110,7 @@ def main():
     X_train, Y_train = check(X_train, Y_train)
     X_test, Y_test = check(X_test, Y_test)
     #print(Y_train)
-    alphas = X_train.columns
+    '''alphas = X_train.columns
     alphaAcc = []
     for i in alphas:
         print(i)
@@ -121,7 +126,8 @@ def main():
             selectedAlphas += [alphaAcc[j]]
     if len(selectedAlphas) >=40:
         selectedAlphas = selectedAlphas[:40]
-    alphaIndex = extractAlpha(selectedAlphas)
+    alphaIndex = extractAlpha(selectedAlphas)'''
+    alphaIndex = ['alpha001', 'alpha101']
     #print('index',alphaIndex)
     model, acc = train(X_train[alphaIndex], X_test[alphaIndex], Y_train, Y_test)
     print('Final Accuracy:', acc)
@@ -148,8 +154,11 @@ def Backtest(numOfMonth, alphaIndex, initial, dist, X, Y):
             model = train2(tempX[alphaIndex], tempY)
             Portfolio, AvgPctr = SelectAndPCTR(model, dist, X.copy(), alphaIndex, startD, endD, startDate, endDate)
             print(Portfolio, AvgPctr)
-            initial = initial*(1+AvgPctr)
-            dataPoints += [[i,initial]]
+            if AvgPctr <10:
+                initial = initial*(1+AvgPctr)
+                dataPoints += [[i,initial]]
+            else:
+                dataPoints += [[i,initial]]
 
         
     return initial
@@ -161,15 +170,23 @@ def ExtractDist(dist, X, Y, startDate, endDate, startD, endD):
     tempY = {}
     for j in dist.keys():
             indices = dist[j].index.values
-            startD, endD = caliDate(startD, endD, startDate, endDate, indices)
-            if checkdate(startDate, indices[0], endDate, indices[-1]):
-                '''Data is valid for selected time'''
-                tempDist[j] = dist[j].loc[startDate:endDate]
-                tempX[j] = X[j].loc[startDate:endDate]
-                tempY[j] = Y[j][startD:endD+1]
+            if (np.datetime64(startDate) in indices) and (np.datetime64(endDate) in indices):
+                #startD, endD = caliDate(startD, endD, startDate, endDate, indices)
+                if checkdate(startDate, indices[0], endDate, indices[-1]):
+                    '''Data is valid for selected time'''
+                    startD, endD = caliDate(startD, endD, startDate, endDate, indices)
+                    tempDist[j] = dist[j].loc[startDate:endDate]
+                    tempX[j] = X[j].loc[startDate:endDate]
+                    tempY[j] = Y[j][startD:endD+1]
     return tempDist.copy(), tempX.copy(), tempY.copy()
 
 def checkdate(start, startc, end, endc):
+    '''delta = relativedelta(months = 1)
+    dates = []
+    i=datetime.date(start.year, start.month, start.day)
+    while i<=end:
+        dates+=[i]
+        i+=delta'''
     start = np.datetime64(start)
     end = np.datetime64(end)
     if start >= startc and end < endc:
@@ -181,8 +198,10 @@ def SelectAndPCTR(model, dist, X, alphaIndex, startD, endD, startDate, endDate):
     scores = []
     for i in dist:
         indices = dist[i].index.values
-        startD, endD = caliDate(startD, endD, startDate, endDate, indices)
+
         if checkdate(startDate, indices[0], endDate+relativedelta(months=1), indices[-1]):
+            #print(i, dist[i])
+            startD, endD = caliDate(startD, endD, startDate, endDate, indices)
             a = (dist[i]['close'].loc[np.datetime64(endDate+relativedelta(months=1))] - dist[i]['close'].loc[np.datetime64(endDate)])/dist[i]['close'].loc[np.datetime64(endDate)]
             b = model.predict(X[i][alphaIndex].loc[np.datetime64(startDate):np.datetime64(endDate)])
             scores += [[b[-1][0], a, i]]
