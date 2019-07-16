@@ -27,7 +27,7 @@ def YFI(leng):
     
     # get monthly data from yahoo finance 
     #hist = yf.download(symbols, period = '5y', interval = '1mo', group_by = 'ticker', auto_adjust = False)
-    for i in symbols[:100]:
+    for i in symbols:
         dist[i] = SS.StockDataFrame.retype(yf.download(i, period = leng, interval = '1mo', auto_adjust = False))
     # Data cleaning
     # delete empty dataframes or dataframes with large amount of NAs.
@@ -110,7 +110,7 @@ def main():
     X_train, Y_train = check(X_train, Y_train)
     X_test, Y_test = check(X_test, Y_test)
     #print(Y_train)
-    '''alphas = X_train.columns
+    alphas = X_train.columns
     alphaAcc = []
     for i in alphas:
         print(i)
@@ -126,8 +126,8 @@ def main():
             selectedAlphas += [alphaAcc[j]]
     if len(selectedAlphas) >=40:
         selectedAlphas = selectedAlphas[:40]
-    alphaIndex = extractAlpha(selectedAlphas)'''
-    alphaIndex = ['alpha001', 'alpha101']
+    alphaIndex = extractAlpha(selectedAlphas)
+    #alphaIndex = ['alpha001', 'alpha101']
     #print('index',alphaIndex)
     model, acc = train(X_train[alphaIndex], X_test[alphaIndex], Y_train, Y_test)
     print('Final Accuracy:', acc)
@@ -172,8 +172,9 @@ def ExtractDist(dist, X, Y, startDate, endDate, startD, endD):
             indices = dist[j].index.values
             if (np.datetime64(startDate) in indices) and (np.datetime64(endDate) in indices):
                 #startD, endD = caliDate(startD, endD, startDate, endDate, indices)
-                if checkdate(startDate, indices[0], endDate, indices[-1]):
+                if checkdate(startDate, indices[0], endDate+relativedelta(months=1), indices[-1]):
                     '''Data is valid for selected time'''
+                    #print(j)
                     startD, endD = caliDate(startD, endD, startDate, endDate, indices)
                     tempDist[j] = dist[j].loc[startDate:endDate]
                     tempX[j] = X[j].loc[startDate:endDate]
@@ -198,13 +199,13 @@ def SelectAndPCTR(model, dist, X, alphaIndex, startD, endD, startDate, endDate):
     scores = []
     for i in dist:
         indices = dist[i].index.values
-
-        if checkdate(startDate, indices[0], endDate+relativedelta(months=1), indices[-1]):
-            #print(i, dist[i])
-            startD, endD = caliDate(startD, endD, startDate, endDate, indices)
-            a = (dist[i]['close'].loc[np.datetime64(endDate+relativedelta(months=1))] - dist[i]['close'].loc[np.datetime64(endDate)])/dist[i]['close'].loc[np.datetime64(endDate)]
-            b = model.predict(X[i][alphaIndex].loc[np.datetime64(startDate):np.datetime64(endDate)])
-            scores += [[b[-1][0], a, i]]
+        if (np.datetime64(startDate) in indices) and (np.datetime64(endDate) in indices) and (np.datetime64(endDate+relativedelta(months=1)) in indices):
+            if checkdate(startDate, indices[0], endDate+relativedelta(months=1), indices[-1]):
+                #print(i, dist[i])
+                #startD, endD = caliDate(startD, endD, startDate, endDate, indices)
+                a = (dist[i]['close'].loc[np.datetime64(endDate+relativedelta(months=1))] - dist[i]['close'].loc[np.datetime64(endDate)])/dist[i]['close'].loc[np.datetime64(endDate)]
+                b = model.predict(X[i][alphaIndex].loc[np.datetime64(startDate):np.datetime64(endDate)])
+                scores += [[b[-1][0], a, i]]
     scores.sort(reverse=True)
     temp = 0
     for i in scores[:10]:
@@ -365,6 +366,7 @@ def train(X_train, X_test, Y_train, Y_test):
 
 def train2(X,Y):
     '''Train and test a regular neural network'''
+    X, Y = check(X,Y)
     model = models.Sequential()
     model.add(layers.Flatten(input_shape = [len(X.columns)]))
     #model.add(layers.Dense(28000, activation = tf.nn.relu))
