@@ -143,7 +143,7 @@ def Backtest(numOfMonth, alphaIndex, initial, dist, X, Y):
         tempDist, tempX, tempY = ExtractDist(dist.copy(), X.copy(), Y.copy(), startDate, endDate, startD, endD)
         tempX = splitterX2(tempX)
         tempY = splitterY2(tempY)
-        print(tempX, tempY)
+
         if tempX.empty == False:
             model = train2(tempX[alphaIndex], tempY)
             Portfolio, AvgPctr = SelectAndPCTR(model, dist, X.copy(), alphaIndex, startD, endD, startDate, endDate)
@@ -183,8 +183,8 @@ def SelectAndPCTR(model, dist, X, alphaIndex, startD, endD, startDate, endDate):
         indices = dist[i].index.values
         startD, endD = caliDate(startD, endD, startDate, endDate, indices)
         if checkdate(startDate, indices[0], endDate+relativedelta(months=1), indices[-1]):
-            a = (dist[i]['close'].loc[endDate+relativedelta(months=1)] - dist[i]['close'].loc[endDate])/dist[i]['close'].loc[endDate]
-            b = model.predict(X[i][alphaIndex].loc[startDate:endDate])
+            a = (dist[i]['close'].loc[np.datetime64(endDate+relativedelta(months=1))] - dist[i]['close'].loc[np.datetime64(endDate)])/dist[i]['close'].loc[np.datetime64(endDate)]
+            b = model.predict(X[i][alphaIndex].loc[np.datetime64(startDate):np.datetime64(endDate)])
             scores += [[b[-1][0], a, i]]
     scores.sort(reverse=True)
     temp = 0
