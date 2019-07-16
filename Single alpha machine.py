@@ -126,38 +126,66 @@ def main():
     model, acc = train(X_train[alphaIndex], X_test[alphaIndex], Y_train, Y_test)
     print('Final Accuracy:', acc)
     
-    Portfolio, AvgPctr = SelectAndPCTR(model, dist, X.copy(), alphaIndex)
+    #Portfolio, AvgPctr = SelectAndPCTR(model, dist, X.copy(), alphaIndex)
     resultMoney = Backtest(56, alphaIndex, 1000, dist, X, Y)
     return resultMoney #return the trained model
 
 def Backtest(numOfMonth, alphaIndex, initial, dist, X, Y):
-    
+    today1 = datetime.date.today() - relativedelta(days = datetime.date.today().day-1)
     dataPoints = []
     for i in range(numOfMonth):
-        tempDist = {}
         startD = i
+        startDate = today1 - relativedelta(months=numOfMonth-i-1)
+        endDate =  today1 - relativedelta(months=numOfMonth-i+2)
         endD = i+3
-        for j in dist.keys():
-            indexes = dist[j].index.values
-        
-        
-        
+        tempDist, tempX, tempY = ExtractDist(dist.copy(), X.copy(), Y.copy(), startDate, endDate, startD, endD)
+        tempX = splitterX2(tempX)
+        tempY = splitterY2(tempY)
+        model = train2(tempX, tempY)
+        Portfolio, AvgPctr = SelectAndPCTR(model, dist, X.copy(), alphaIndex, startD, endD, startDate, endDate)
+        initial = initial*(1+AvgPctr)
+        dataPoints += [[i,initial]]
+        print(endDate)
     return initial
 
-def SelectAndPCTR(model, dist, X, alphaIndex):
+
+def ExtractDist(dist, X, Y, startDate, endDate, startD, endD):
+    tempDist = {}
+    tempX = {}
+    tempY = {}
+    for j in dist.keys():
+            indexes = dist[j].index.values
+            print(startDate, indexes[0])
+            if checkdate(startDate, indexes[0], endDate, indexes[-2]):
+                '''Data is valid for selected time'''
+                tempDist[j] = dist[j].iloc[startD:endD]
+                tempX[j] = X[j].iloc[startD:endD]
+                tempY[j] = Y[j].iloc[startD:endD]
+    return tempDist.copy(), tempX.copy(), tempY.copy()
+
+def checkdate(start, startc, end, endc):
+    start = np.datetime64(start)
+    end = np.datetime64(end)
+    if start >= startc and end <= endc:
+        return True
+    else:
+        return False
+
+def SelectAndPCTR(model, dist, X, alphaIndex, startD, endD, startDate, endDate):
     scores = []
     for i in dist:
-        if dist[i].shape[0]>1:
-            a = (dist[i]['close'][-1] - dist[i]['close'][-2])/dist[i]['close'][-2]
+        indices = dist[i].index.values
+        if checkdate(startDate, indices[0], endDate+relativedelta(months=1), indices[-1]):
+            a = (dist[i]['close'][endD] - dist[i]['close'][endD+1])/dist[i]['close'][endD+1]
             b = model.predict(X[i][alphaIndex])
-            scores += [[b[-2][0], i, a]]
+            scores += [[b[endD+1][0], a, i]]
     scores.sort(reverse=True)
     temp = 0
     for i in scores[:10]:
-        temp+=i[2]/10
+        temp+=i[1]/10
     res = []
     for j in scores[:10]:
-        res+=[j[1]]
+        res+=[j[2]]
     return res, temp
 
 def extractAlpha(lis):
@@ -175,7 +203,7 @@ def splitterX(dist):
         test = dist[i].iloc[cut:]
         newT = pd.concat([newT, train], axis=0, ignore_index=True)
         newR = pd.concat([newR, test], axis=0, ignore_index=True)
-    return newT, newR
+    return newT.copy(), newR.copy()
 
 def splitterY(dist):
     newT = np.asarray([])
@@ -186,7 +214,21 @@ def splitterY(dist):
         test = dist[i][cut:]
         newT = np.append(newT, train)
         newR = np.append(newR, test)
-    return newT, newR
+    return newT.copy(), newR.copy()
+
+def splitterX2(dist):
+    newT = pd.DataFrame()
+    for i in dist.keys():
+        train = dist[i]
+        newT = pd.concat([newT, train], axis=0, ignore_index=True)
+    return newT.copy()
+
+def splitterY2(dist):
+    newT = np.asarray([])
+    for i in dist.keys():
+        train = dist[i]
+        newT = np.append(newT, train)
+    return newT.copy()
 
 def get_weighted_classes(weights, classes):
     '''
@@ -290,6 +332,31 @@ def train(X_train, X_test, Y_train, Y_test):
     # print('Correct Prediction (%): ', accuracy_score(Y_test, model.predict(X_test), normalize=True)*100.0)
     return model, test_acc
 
+def train2(X,Y):
+    '''Train and test a regular neural network'''
+    model = models.Sequential()
+    model.add(layers.Flatten(input_shape = [len(X.columns)]))
+    #model.add(layers.Dense(28000, activation = tf.nn.relu))
+    #model.add(layers.Dense(20000, activation = tf.nn.relu))
+    model.add(layers.Dense(512, activation = tf.nn.relu))
+    #model.add(layers.Dense(12000, activation = tf.nn.relu))
+    #model.add(layers.Dense(8000, activation = tf.nn.relu))
+    #model.add(layers.Dense(6000, activation = tf.nn.relu))
+    #model.add(layers.Dense(4000, activation = tf.nn.relu))
+    #model.add(layers.Dense(2000, activation = tf.nn.relu))
+    #model.add(layers.Dense(1000, activation = tf.nn.relu))
+    #model.add(layers.Dense(500, activation = tf.nn.relu))
+    model.add(layers.Dense(256, activation = tf.nn.relu))
+    model.add(layers.Dense(16, activation=tf.nn.relu))
+    model.add(layers.Dense(8, activation=tf.nn.softmax))
+    # model.summary()
+    model.compile(optimizer='adam', 
+                  loss='sparse_categorical_crossentropy',
+                  metrics=['accuracy'])
+    model.fit(X, Y, epochs=5, verbose = 0)
+    # print('Correct Prediction (%): ', accuracy_score(Y_test, model.predict(X_test), normalize=True)*100.0)
+    return model
+
 def TrueYTransform(dist):
     '''rescale price (Y) into 0/1'''
     new = {}
@@ -358,7 +425,4 @@ def SPpctr():
     price2 = prices['Close'][-1]
     return [price1, price2]
 #test area
-a = YFI('5y')
-b= np.datetime64(datetime.datetime(2018,1,1))
-print(b)
-print(a['MMM'].index.values)
+main()
