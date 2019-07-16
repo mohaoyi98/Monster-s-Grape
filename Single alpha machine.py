@@ -7,6 +7,8 @@ import stockstats as SS
 from tensorflow.contrib import rnn
 from tensorflow.keras import datasets, layers, models
 import random
+import datetime
+from dateutil.relativedelta import relativedelta
 
 import alp1 # import alpha features in alp1.py
 
@@ -17,7 +19,7 @@ symbols = list(symbols['Symbol'])
 
 # Available types from Yahoo Finance
 #tem = ['Adj Close', 'Close', 'High', 'Low', 'Open', 'Volume']
-def YFI():
+def YFI(leng):
     '''import stock data from yahoo finance'''
     # Get data from Yahoo Finance
     # Turn into Stockstats dataframe, did some initial cleaning
@@ -25,8 +27,8 @@ def YFI():
     
     # get monthly data from yahoo finance 
     #hist = yf.download(symbols, period = '5y', interval = '1mo', group_by = 'ticker', auto_adjust = False)
-    for i in symbols:
-        dist[i] = SS.StockDataFrame.retype(yf.download(i, period = '5y', interval = '1mo', auto_adjust = False))
+    for i in symbols[:10]:
+        dist[i] = SS.StockDataFrame.retype(yf.download(i, period = leng, interval = '1mo', auto_adjust = False))
     # Data cleaning
     # delete empty dataframes or dataframes with large amount of NAs.
     na = []
@@ -46,6 +48,11 @@ def YFI():
             if tflist[j]:
                 temp2 =temp2 + [temp[j]]
         dist[i] = dist[i].drop(temp2)
+    
+    for i in dist.keys():
+        temp = dist[i].index.values[-1]
+        if str(temp)[8:10] != '01':
+            dist[i] = dist[i].drop(temp)
         
     for i in dist.keys():
         for j in ['close', 'open', 'high', 'low']:
@@ -87,14 +94,12 @@ def CreateFeatures(dist):
     return new
 
 def main():
-    dist = YFI()
+    dist = YFI('5y')
     # print(dist)
     #feas = CreateFeatures(dist)
     #print('check')
     X = GetAlphasAll(dist)
     Y = TrueYTransform(dist)
-
-
     X_train, X_test = splitterX(X)
     Y_train, Y_test = splitterY(Y)
     X_train, Y_train = check(X_train, Y_train)
@@ -120,37 +125,40 @@ def main():
     #print('index',alphaIndex)
     model, acc = train(X_train[alphaIndex], X_test[alphaIndex], Y_train, Y_test)
     print('Final Accuracy:', acc)
-    print(RMCompare(Y_test))
-    PortVSSP500(model, dist, X.copy(), alphaIndex)
-    return model #return the trained model
+    
+    Portfolio, AvgPctr = SelectAndPCTR(model, dist, X.copy(), alphaIndex)
+    resultMoney = Backtest(56, alphaIndex, 1000, dist, X, Y)
+    return resultMoney #return the trained model
 
-def PortVSSP500(model, dist, X, alphaIndex):
-    pctrs = {}
-    selected = []
-    tempp = []
+def Backtest(numOfMonth, alphaIndex, initial, dist, X, Y):
+    
+    dataPoints = []
+    for i in range(numOfMonth):
+        tempDist = {}
+        startD = i
+        endD = i+3
+        for j in dist.keys():
+            indexes = dist[j].index.values
+        
+        
+        
+    return initial
+
+def SelectAndPCTR(model, dist, X, alphaIndex):
+    scores = []
     for i in dist:
         if dist[i].shape[0]>1:
             a = (dist[i]['close'][-1] - dist[i]['close'][-2])/dist[i]['close'][-2]
-            pctrs[i] = a
-            tempp += [[a,i]]
-            b = model.predict(X[i][alphaIndex])[-2][0]
-            if b > 0.9:
-                selected += [i]
-    tempp.sort(reverse=True)
-
-    port = []
+            b = model.predict(X[i][alphaIndex])
+            scores += [[b[-2][0], i, a]]
+    scores.sort(reverse=True)
     temp = 0
-    index = 0
-    while ((len(port)<10) and (index<len(tempp))):
-        if tempp[index][1] in selected:
-            port += tempp[index][1]
-            print(tempp[index][0])
-            temp += tempp[index][0]/10
-        index += 1
-    sppctr = SPpctr()
-    print('S&P500:', sppctr, 'Portfolio return:', temp, 'Portfolio:', port)
-    return
-    
+    for i in scores[:10]:
+        temp+=i[2]/10
+    res = []
+    for j in scores[:10]:
+        res+=[j[1]]
+    return res, temp
 
 def extractAlpha(lis):
     res = []
@@ -345,10 +353,12 @@ def RMCompare(test):
     return ranAcc
 
 def SPpctr():
-    prices = yf.download('^GSPC', period = '2mo', interval = '1mo')
+    prices = yf.download('^GSPC', period = '5y', interval = '1mo', auto_adjust = False)
     price1 = prices['Close'][0]
-    price2 = prices['Close'][1]
-    return (price2-price1)/price1
+    price2 = prices['Close'][-1]
+    return [price1, price2]
 #test area
-main()
-
+a = YFI('5y')
+b= np.datetime64(datetime.datetime(2018,1,1))
+print(b)
+print(a['MMM'].index.values)
