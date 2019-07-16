@@ -127,7 +127,7 @@ def main():
     print('Final Accuracy:', acc)
     
     #Portfolio, AvgPctr = SelectAndPCTR(model, dist, X.copy(), alphaIndex)
-    resultMoney = Backtest(56, alphaIndex, 1000, dist, X, Y)
+    resultMoney = Backtest(60, alphaIndex, 1000, dist, X, Y)
     return resultMoney #return the trained model
 
 def Backtest(numOfMonth, alphaIndex, initial, dist, X, Y):
@@ -136,16 +136,16 @@ def Backtest(numOfMonth, alphaIndex, initial, dist, X, Y):
     for i in range(numOfMonth):
         startD = i
         startDate = today1 - relativedelta(months=numOfMonth-i-1)
-        endDate =  today1 - relativedelta(months=numOfMonth-i+2)
+        endDate =  today1 - relativedelta(months=numOfMonth-i-4)
         endD = i+3
         tempDist, tempX, tempY = ExtractDist(dist.copy(), X.copy(), Y.copy(), startDate, endDate, startD, endD)
         tempX = splitterX2(tempX)
         tempY = splitterY2(tempY)
-        model = train2(tempX, tempY)
+        model = train2(tempX[alphaIndex], tempY)
         Portfolio, AvgPctr = SelectAndPCTR(model, dist, X.copy(), alphaIndex, startD, endD, startDate, endDate)
         initial = initial*(1+AvgPctr)
         dataPoints += [[i,initial]]
-        print(endDate)
+        print(startDate,endDate)
     return initial
 
 
@@ -155,12 +155,11 @@ def ExtractDist(dist, X, Y, startDate, endDate, startD, endD):
     tempY = {}
     for j in dist.keys():
             indexes = dist[j].index.values
-            print(startDate, indexes[0])
             if checkdate(startDate, indexes[0], endDate, indexes[-2]):
                 '''Data is valid for selected time'''
                 tempDist[j] = dist[j].iloc[startD:endD]
                 tempX[j] = X[j].iloc[startD:endD]
-                tempY[j] = Y[j].iloc[startD:endD]
+                tempY[j] = Y[j][startD:endD]
     return tempDist.copy(), tempX.copy(), tempY.copy()
 
 def checkdate(start, startc, end, endc):
@@ -425,4 +424,4 @@ def SPpctr():
     price2 = prices['Close'][-1]
     return [price1, price2]
 #test area
-main()
+a = main()
