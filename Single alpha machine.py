@@ -9,7 +9,7 @@ from tensorflow.keras import datasets, layers, models
 import random
 import datetime
 from dateutil.relativedelta import relativedelta
-
+import matplotlib.pyplot as plt
 import alp1 # import alpha features in alp1.py
 
 symbols = pd.read_excel('SP500.xlsx')
@@ -104,7 +104,7 @@ def main():
     #feas = CreateFeatures(dist)
     #print('check')
     X = GetAlphasAll(dist)
-    Y = TrueYTransform(dist)
+    Y = TrueYTransform(dist, 1)
     X_train, X_test = splitterX(X)
     Y_train, Y_test = splitterY(Y)
     X_train, Y_train = check(X_train, Y_train)
@@ -137,14 +137,16 @@ def main():
     return resultMoney #return the trained model
 
 def Backtest(numOfMonth, alphaIndex, initial, dist, X, Y):
+    actinitial = initial
     today1 = datetime.date.today() - relativedelta(days = datetime.date.today().day-1)
-    dataPoints = []
+    dataX = []
+    dataY = []
     for i in range(numOfMonth-1):
 
         startD = i
         startDate = today1 - relativedelta(months=numOfMonth-i-1)
-        endDate =  today1 - relativedelta(months=numOfMonth-i-4)
-        endD = i+3
+        endDate =  today1 - relativedelta(months=numOfMonth-i-3)
+        endD = i+2
         print(startDate,endDate)
         tempDist, tempX, tempY = ExtractDist(dist.copy(), X.copy(), Y.copy(), startDate, endDate, startD, endD)
         tempX = splitterX2(tempX)
@@ -156,10 +158,18 @@ def Backtest(numOfMonth, alphaIndex, initial, dist, X, Y):
             print(Portfolio, AvgPctr)
             if AvgPctr <10:
                 initial = initial*(1+AvgPctr)
-                dataPoints += [[i,initial]]
+                dataX += [i]
+                dataY += [initial]
             else:
-                dataPoints += [[i,initial]]
-
+                dataX += [i]
+                dataY += [initial]
+    plt.plot(np.asarray(dataX), np.asarray(dataY), label = 'Projected Return')
+    plt.xlabel('Months')
+    plt.ylabel('Money')
+    plt.title("Change of money on the past 5 years")
+    plt.legend()
+    plt.show()
+    print('Initial Money:', actinitial, 'Resulting Money:', initial)
         
     return initial
 
@@ -172,7 +182,7 @@ def ExtractDist(dist, X, Y, startDate, endDate, startD, endD):
             indices = dist[j].index.values
             if (np.datetime64(startDate) in indices) and (np.datetime64(endDate) in indices):
                 #startD, endD = caliDate(startD, endD, startDate, endDate, indices)
-                if checkdate(startDate, indices[0], endDate+relativedelta(months=1), indices[-1]):
+                if checkdate(startDate, indices[0], endDate+relativedelta(months=2), indices[-1]):
                     '''Data is valid for selected time'''
                     #print(j)
                     startD, endD = caliDate(startD, endD, startDate, endDate, indices)
@@ -190,7 +200,7 @@ def checkdate(start, startc, end, endc):
         i+=delta'''
     start = np.datetime64(start)
     end = np.datetime64(end)
-    if start >= startc and end < endc:
+    if start >= startc and end <= endc:
         return True
     else:
         return False
@@ -199,12 +209,12 @@ def SelectAndPCTR(model, dist, X, alphaIndex, startD, endD, startDate, endDate):
     scores = []
     for i in dist:
         indices = dist[i].index.values
-        if (np.datetime64(startDate) in indices) and (np.datetime64(endDate) in indices) and (np.datetime64(endDate+relativedelta(months=1)) in indices):
-            if checkdate(startDate, indices[0], endDate+relativedelta(months=1), indices[-1]):
+        if (np.datetime64(startDate) in indices) and (np.datetime64(endDate) in indices) and (np.datetime64(endDate+relativedelta(months=1)) in indices) and (np.datetime64(endDate+relativedelta(months=2)) in indices):
+            if checkdate(startDate, indices[0], endDate+relativedelta(months=2), indices[-1]):
                 #print(i, dist[i])
                 #startD, endD = caliDate(startD, endD, startDate, endDate, indices)
-                a = (dist[i]['close'].loc[np.datetime64(endDate+relativedelta(months=1))] - dist[i]['close'].loc[np.datetime64(endDate)])/dist[i]['close'].loc[np.datetime64(endDate)]
-                b = model.predict(X[i][alphaIndex].loc[np.datetime64(startDate):np.datetime64(endDate)])
+                a = (dist[i]['close'].loc[np.datetime64(endDate+relativedelta(months=2))] - dist[i]['close'].loc[np.datetime64(endDate+relativedelta(months=1))])/dist[i]['close'].loc[np.datetime64(endDate+relativedelta(months=1))]
+                b = model.predict(X[i][alphaIndex].loc[np.datetime64(startDate):np.datetime64(endDate+relativedelta(months=1))])
                 scores += [[b[-1][0], a, i]]
     scores.sort(reverse=True)
     temp = 0
@@ -217,8 +227,11 @@ def SelectAndPCTR(model, dist, X, alphaIndex, startD, endD, startDate, endDate):
 
 def caliDate(startD, endD, startDate, endDate, indices):
     sd = np.datetime64(startDate)
-    ind = np.where(indices == sd)[0][0]
-    return ind, ind+3
+    ind = np.where(indices == sd)[0]
+    if len(ind) == 0:
+        return startD, endD
+    else:
+        return ind[0], ind[0]+3
 
 def extractAlpha(lis):
     res = []
@@ -390,7 +403,7 @@ def train2(X,Y):
     # print('Correct Prediction (%): ', accuracy_score(Y_test, model.predict(X_test), normalize=True)*100.0)
     return model
 
-def TrueYTransform(dist):
+def TrueYTransform(dist, choice):
     '''rescale price (Y) into 0/1'''
     new = {}
     for i in dist.keys():
