@@ -27,7 +27,7 @@ def YFI(leng):
     
     # get monthly data from yahoo finance 
     #hist = yf.download(symbols, period = '5y', interval = '1mo', group_by = 'ticker', auto_adjust = False)
-    for i in symbols:
+    for i in symbols[200:300]:
         dist[i] = SS.StockDataFrame.retype(yf.download(i, period = leng, interval = '1mo', auto_adjust = False))
     # Data cleaning
     # delete empty dataframes or dataframes with large amount of NAs.
@@ -104,7 +104,7 @@ def main():
     #feas = CreateFeatures(dist)
     #print('check')
     X = GetAlphasAll(dist)
-    Y = TrueYTransform(dist, 1)
+    Y = TrueYTransform(dist, 0)
     X_train, X_test = splitterX(X)
     Y_train, Y_test = splitterY(Y)
     X_train, Y_train = check(X_train, Y_train)
@@ -405,17 +405,41 @@ def train2(X,Y):
 
 def TrueYTransform(dist, choice):
     '''rescale price (Y) into 0/1'''
-    new = {}
-    for i in dist.keys():
-        new[i]=np.asarray([])
-        for j in range(dist[i].shape[0]-1):
-            temp1 = dist[i]['close'][j]
-            temp2 = dist[i]['close'][j+1]
-            if temp1 < temp2:
-                new[i] = np.append(new[i], [0])
-            else:
-                new[i] = np.append(new[i], [1])
+    if choice == 0:
+        '''Decrease in price = 0, increase or equal = 1'''
+        new = {}
+        for i in dist.keys():
+            new[i]=np.asarray([])
+            for j in range(dist[i].shape[0]-1):
+                temp1 = dist[i]['close'][j]
+                temp2 = dist[i]['close'][j+1]
+                if temp1 < temp2:
+                    new[i] = np.append(new[i], [0])
+                else:
+                    new[i] = np.append(new[i], [1])
+    elif choice == 1:
+        '''If percentage return is higher than that of S&P 500, Y = 1, otherwise Y = 0'''
+        new = {}
+        sppctrs = SPpctr()
+        for i in dist.keys():
+            new[i]=np.asarray([])
+            indices = dist[i].index.values
+            
+            for j in range(dist[i].shape[0]-1):
+                temp1 = dist[i]['close'][j]
+                temp2 = dist[i]['close'][j+1]
+                pctr = (temp2-temp1)/temp1
+                if pctr <= sppctrs['pctr'].loc[indices[j]]:
+                    new[i] = np.append(new[i], [0])
+                else:
+                    new[i] = np.append(new[i], [1])
     return new
+
+
+
+
+
+
 
 def PriceToEarningPerShare(prices):
     '''Earnings per share: a portion of a company's profit that is allocated to one share of stock.
@@ -467,9 +491,24 @@ def RMCompare(test):
 
 def SPpctr():
     prices = yf.download('^GSPC', period = '5y', interval = '1mo', auto_adjust = False)
-    price1 = prices['Close'][0]
-    price2 = prices['Close'][-1]
-    return [price1, price2]
+    indices = prices.index.values
+    print(indices[0])
+    prices = prices[prices.Close.isna() == False]
+    for j in indices:
+        if str(j)[8:10] != '01':
+            prices = prices.drop(j)
+    new = []
+    indices = prices.index.values
+    for k in range(len(indices)-1):
+        a = prices['Close'][k]
+        b = prices['Close'][k+1]
+        pctr = (b-a)/a
+        new+=[pctr]
+    indices = prices.index.values
+    prices = prices.drop(indices[-1])
+    prices['pctr'] = new
+    return prices.drop(['Close', 'Open', 'High','Low','Adj Close','Volume'], axis = 1)
 #test area
-a = main()
-print(a)
+print(SPpctr())
+a=YFI('5y')
+print(TrueYTransform(a, 1))
