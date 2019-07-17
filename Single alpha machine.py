@@ -19,7 +19,7 @@ symbols = list(symbols['Symbol'])
 
 # Available types from Yahoo Finance
 tem = ['adj close', 'close', 'high', 'low', 'open', 'volume']
-def YFI(leng):
+def YFI(leng='5y'):
     '''import stock data from yahoo finance'''
     # Get data from Yahoo Finance
     # Turn into Stockstats dataframe, did some initial cleaning
@@ -27,7 +27,7 @@ def YFI(leng):
     
     # get monthly data from yahoo finance 
     #hist = yf.download(symbols, period = '5y', interval = '1mo', group_by = 'ticker', auto_adjust = False)
-    for i in symbols[200:300]:
+    for i in symbols[:100]:
         dist[i] = SS.StockDataFrame.retype(yf.download(i, period = leng, interval = '1mo', auto_adjust = False))
     # Data cleaning
     # delete empty dataframes or dataframes with large amount of NAs.
@@ -99,12 +99,23 @@ def CreateFeatures(dist):
     return new
 
 def main():
-    dist = YFI('5y')
+    dist = YFI()
     # print(dist)
     #feas = CreateFeatures(dist)
     #print('check')
+    X, Y = ProcessData(dist)
+    alphaIndex = SingleAlpha(X, Y)
+    
+    #Portfolio, AvgPctr = SelectAndPCTR(model, dist, X.copy(), alphaIndex)
+    resultMoney = Backtest(60, alphaIndex, 1000, dist, X, Y)
+    return resultMoney #return the trained model
+
+def ProcessData(dist):
     X = GetAlphasAll(dist)
-    Y = TrueYTransform(dist, 0)
+    Y = TrueYTransform(dist, 1)
+    return X.copy(), Y.copy()
+
+def SingleAlpha(X,Y):
     X_train, X_test = splitterX(X)
     Y_train, Y_test = splitterY(Y)
     X_train, Y_train = check(X_train, Y_train)
@@ -115,9 +126,7 @@ def main():
     for i in alphas:
         print(i)
         modeli, iacc, t = trainSingleAlpha(X_train[i], X_test[i], Y_train, Y_test)
-        
         alphaAcc+= [[iacc, i, t]]
-
     alphaAcc.sort(reverse=True)
     #print(alphaAcc)
     selectedAlphas = []
@@ -128,13 +137,9 @@ def main():
         selectedAlphas = selectedAlphas[:40]
     alphaIndex = extractAlpha(selectedAlphas)
     #alphaIndex = ['alpha001', 'alpha101']
-    #print('index',alphaIndex)
     model, acc = train(X_train[alphaIndex], X_test[alphaIndex], Y_train, Y_test)
     print('Final Accuracy:', acc)
-    
-    #Portfolio, AvgPctr = SelectAndPCTR(model, dist, X.copy(), alphaIndex)
-    resultMoney = Backtest(60, alphaIndex, 1000, dist, X, Y)
-    return resultMoney #return the trained model
+    return alphaIndex
 
 def Backtest(numOfMonth, alphaIndex, initial, dist, X, Y):
     actinitial = initial
@@ -151,7 +156,6 @@ def Backtest(numOfMonth, alphaIndex, initial, dist, X, Y):
         tempDist, tempX, tempY = ExtractDist(dist.copy(), X.copy(), Y.copy(), startDate, endDate, startD, endD)
         tempX = splitterX2(tempX)
         tempY = splitterY2(tempY)
-
         if tempX.empty == False:
             model = train2(tempX[alphaIndex], tempY)
             Portfolio, AvgPctr = SelectAndPCTR(model, dist, X.copy(), alphaIndex, startD, endD, startDate, endDate)
@@ -424,12 +428,15 @@ def TrueYTransform(dist, choice):
         for i in dist.keys():
             new[i]=np.asarray([])
             indices = dist[i].index.values
-            
-            for j in range(dist[i].shape[0]-1):
+            if indices[0] == np.datetime64('2014-07-01T00:00:00.000000000'):
+                indices = indices[1:]
+            #print(i, indices)
+            for j in range(indices.shape[0]-1):
                 temp1 = dist[i]['close'][j]
                 temp2 = dist[i]['close'][j+1]
                 pctr = (temp2-temp1)/temp1
-                if pctr <= sppctrs['pctr'].loc[indices[j]]:
+                
+                if pctr <= sppctrs['pctr'][j]:
                     new[i] = np.append(new[i], [0])
                 else:
                     new[i] = np.append(new[i], [1])
@@ -492,7 +499,7 @@ def RMCompare(test):
 def SPpctr():
     prices = yf.download('^GSPC', period = '5y', interval = '1mo', auto_adjust = False)
     indices = prices.index.values
-    print(indices[0])
+    #print(indices[0])
     prices = prices[prices.Close.isna() == False]
     for j in indices:
         if str(j)[8:10] != '01':
@@ -509,6 +516,4 @@ def SPpctr():
     prices['pctr'] = new
     return prices.drop(['Close', 'Open', 'High','Low','Adj Close','Volume'], axis = 1)
 #test area
-print(SPpctr())
-a=YFI('5y')
-print(TrueYTransform(a, 1))
+main()
