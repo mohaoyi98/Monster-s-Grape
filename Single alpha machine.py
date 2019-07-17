@@ -27,7 +27,7 @@ def YFI(leng='5y'):
     
     # get monthly data from yahoo finance 
     #hist = yf.download(symbols, period = '5y', interval = '1mo', group_by = 'ticker', auto_adjust = False)
-    for i in symbols[:100]:
+    for i in symbols[:10]:
         dist[i] = SS.StockDataFrame.retype(yf.download(i, period = leng, interval = '1mo', auto_adjust = False))
     # Data cleaning
     # delete empty dataframes or dataframes with large amount of NAs.
@@ -411,41 +411,76 @@ def TrueYTransform(dist, choice):
     '''rescale price (Y) into 0/1'''
     if choice == 0:
         '''Decrease in price = 0, increase or equal = 1'''
-        new = {}
-        for i in dist.keys():
-            new[i]=np.asarray([])
-            for j in range(dist[i].shape[0]-1):
-                temp1 = dist[i]['close'][j]
-                temp2 = dist[i]['close'][j+1]
-                if temp1 < temp2:
-                    new[i] = np.append(new[i], [0])
-                else:
-                    new[i] = np.append(new[i], [1])
+        new = choice0(dist)
     elif choice == 1:
         '''If percentage return is higher than that of S&P 500, Y = 1, otherwise Y = 0'''
-        new = {}
-        sppctrs = SPpctr()
-        for i in dist.keys():
-            new[i]=np.asarray([])
-            indices = dist[i].index.values
-            if indices[0] == np.datetime64('2014-07-01T00:00:00.000000000'):
-                indices = indices[1:]
-            #print(i, indices)
-            for j in range(indices.shape[0]-1):
-                temp1 = dist[i]['close'][j]
-                temp2 = dist[i]['close'][j+1]
-                pctr = (temp2-temp1)/temp1
-                
-                if pctr <= sppctrs['pctr'][j]:
-                    new[i] = np.append(new[i], [0])
-                else:
-                    new[i] = np.append(new[i], [1])
+        new = choice1(dist)
+    elif choice == 2:
+        '''Top x% pctr companies have Y = 1, others have Y = 0'''
+        new = choice2(dist, 0.3)
     return new
 
 
+def choice0(dist):
+    new = {}
+    for i in dist.keys():
+        new[i]=np.asarray([])
+        for j in range(dist[i].shape[0]-1):
+            temp1 = dist[i]['close'][j]
+            temp2 = dist[i]['close'][j+1]
+            if temp1 < temp2:
+                new[i] = np.append(new[i], [0])
+            else:
+                new[i] = np.append(new[i], [1])
+    return new
 
+def choice1(dist):
+    new = {}
+    sppctrs = SPpctr()
+    for i in dist.keys():
+        new[i]=np.asarray([])
+        indices = dist[i].index.values
+        if indices[0] == np.datetime64('2014-07-01T00:00:00.000000000'):
+            indices = indices[1:]
+        #print(i, indices)
+        for j in range(indices.shape[0]-1):
+            temp1 = dist[i]['close'][j]
+            temp2 = dist[i]['close'][j+1]
+            pctr = (temp2-temp1)/temp1
+            
+            if pctr <= sppctrs['pctr'][j]:
+                new[i] = np.append(new[i], [0])
+            else:
+                new[i] = np.append(new[i], [1])
+    return new
 
-
+def choice2(dist, cut):
+    pctrs = {}
+    for i in dist.keys():
+        pctrs[i] = GetAlphas(dist[i])['pctr']
+    #new = {}
+    #temp = pctrs['AES'].shape[0]  
+    indices = pctrs['AES'].index.values
+    for j in range(len(indices)):
+        allpctr = []
+        availCompanies = []
+        for i in dist.keys():
+            indi = pctrs[i].index.values
+            if indices[j] in indi:
+                allpctr += [pctrs[i].loc[indices[j]]]
+                availCompanies += [i]
+        allpctr.sort(reverse = True)
+        splitter = int(cut*len(allpctr))
+        cutter = allpctr[splitter]
+        for i in availCompanies:
+            tem = pctrs[i].loc[indices[j]]
+            if tem < cutter:
+                pctrs[i].loc[indices[j]] = 1
+            else:
+                pctrs[i].loc[indices[j]] = 0
+            
+            
+    return pctrs
 
 
 def PriceToEarningPerShare(prices):
@@ -516,4 +551,6 @@ def SPpctr():
     prices['pctr'] = new
     return prices.drop(['Close', 'Open', 'High','Low','Adj Close','Volume'], axis = 1)
 #test area
-main()
+a = YFI()
+b = choice2(a, 0.3)
+print(b)
