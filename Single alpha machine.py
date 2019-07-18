@@ -27,7 +27,7 @@ def YFI(leng='5y'):
     
     # get monthly data from yahoo finance 
     #hist = yf.download(symbols, period = '5y', interval = '1mo', group_by = 'ticker', auto_adjust = False)
-    for i in symbols[:10]:
+    for i in symbols:
         dist[i] = SS.StockDataFrame.retype(yf.download(i, period = leng, interval = '1mo', auto_adjust = False))
     # Data cleaning
     # delete empty dataframes or dataframes with large amount of NAs.
@@ -112,7 +112,7 @@ def main():
 
 def ProcessData(dist):
     X = GetAlphasAll(dist)
-    Y = TrueYTransform(dist, 1)
+    Y = TrueYTransform(dist, 2)
     return X.copy(), Y.copy()
 
 def SingleAlpha(X,Y):
@@ -478,8 +478,8 @@ def choice2(dist, cut):
                 pctrs[i].loc[indices[j]] = 1
             else:
                 pctrs[i].loc[indices[j]] = 0
-            
-            
+    for i in pctrs.keys():
+        pctrs[i] = np.asarray(pctrs[i])
     return pctrs
 
 
@@ -551,6 +551,4 @@ def SPpctr():
     prices['pctr'] = new
     return prices.drop(['Close', 'Open', 'High','Low','Adj Close','Volume'], axis = 1)
 #test area
-a = YFI()
-b = choice2(a, 0.3)
-print(b)
+main()
