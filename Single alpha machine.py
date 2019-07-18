@@ -417,7 +417,7 @@ def TrueYTransform(dist, choice):
         new = choice1(dist)
     elif choice == 2:
         '''Top x% pctr companies have Y = 1, others have Y = 0'''
-        new = choice2(dist, 0.3)
+        new = choice2(dist, 0.5)
     return new
 
 
