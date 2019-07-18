@@ -112,7 +112,7 @@ def main():
 
 def ProcessData(dist):
     X = GetAlphasAll(dist)
-    Y = TrueYTransform(dist, 2)
+    Y = TrueYTransform(dist, 1)
     return X.copy(), Y.copy()
 
 def SingleAlpha(X,Y):
